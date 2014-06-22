@@ -63,7 +63,7 @@ static void log_node(struct node_s *node, const char *fmt, ...)
 	va_end(arg);
 }
 
-static void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
+/*static void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
 	int level=node->level;
@@ -77,7 +77,7 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
 	va_end(arg);
-}
+}*/
 
 struct node_s *create_node(struct node_s *parent, int type)
 {
@@ -557,7 +557,7 @@ static struct op_s op_table[]={
 	{TT_COMMA_OP, 72, OP_ASSOC_RIGHT, OP_BINARY}
 };
 #endif
-
+#if 0
 static struct op_s *get_op(int token)
 {
 	size_t ix;
@@ -568,7 +568,7 @@ static struct op_s *get_op(int token)
 
 	return NULL;
 }
-
+#endif
 struct token_arities_s {
 	int type;
 	int left_unary;
@@ -661,19 +661,20 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 {
 	size_t ix=0;
 	struct node_s *node;
-	struct op_s *op;
+//	struct op_s *op;
 
 	node=create_node(parent, NT_EXPR);
 	node->token=tokens[ix];
 
 	while (tokens[ix]->type!=TT_NULL) {
 		if (isop(tokens[ix])) {
-			op=get_op(tokens[ix]);
+/*			op=get_op(tokens[ix]);
 			if (op->assoc==OP_ASSOC_RIGHT) {
 			} else {
-			}
+			}*/
 		}
 	}
+	return 0;
 }
 
 #if 0
