@@ -270,7 +270,7 @@ static size_t parse_struct_union_member_list(struct node_s *parent, struct token
 
 	if (tokens[ix]->type==TT_LEFT_CURLY) {
 		++ix;
-	} else return error_node(node, "parse_struct_union_spec(): Missing struct block start"), (size_t)0;
+	} else return error_node(node, "parse_struct_union_member_list(): Missing struct block start"), (size_t)0;
 
 	while ((parsed=parse_declaration(node, tokens+ix))) {
 		ix+=parsed;
@@ -279,8 +279,7 @@ static size_t parse_struct_union_member_list(struct node_s *parent, struct token
 	if (tokens[ix]->type==TT_RIGHT_CURLY) {
 		++ix;
 		return add_node(node), ix;
-	} else return error_node(node, "parse_struct_union_spec(): Missing struct block end"), (size_t)0;
-
+	} else return error_node(node, "parse_struct_union_member_list(): Missing struct block end"), (size_t)0;
 }
 
 static size_t parse_struct_union_spec(struct node_s *parent, struct token_s **tokens)
