@@ -662,7 +662,7 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 	size_t ix=0;
 	struct node_s *node;
 	struct op_s *op;
-	struct op_s *tmpop;
+	struct token_s *tmpop_token;
 	STACK *op_stack, *rpn_stack;
 
 	op_stack=stackalloc(32);
@@ -677,18 +677,24 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 
 			if (op->assoc==OP_ASSOC_RIGHT) {
 				while (stacksize(op_stack)>0 
-					&& op->prec<(tmpop=stackpop(op_stack))->prec) {
-					stackpush(rpn_stack, tmpop);
+					&& op->prec<get_op((tmpop_token=stackpop(op_stack)))->prec) {
+					stackpush(rpn_stack, tmpop_token);
 				}
 			} else {
 				while (stacksize(op_stack)>0 
-					&& op->prec<=(tmpop=stackpop(op_stack))->prec) {
-					stackpush(rpn_stack, tmpop);
+					&& op->prec<=get_op((tmpop_token=stackpop(op_stack)))->prec) {
+					stackpush(rpn_stack, tmpop_token);
 				}
 			}
 
-			stackpush(op_stack, op);
+			stackpush(op_stack, tokens[ix]);
+		} else if (isvalue(tokens[ix])) {
+			stackpush(rpn_stack, tokens[ix]);
 		}
+	}
+
+	while (stacksize(op_stack)>0) {
+		stackpush(rpn_stack, tokens[ix]);
 	}
 
 	stackfree(rpn_stack);
