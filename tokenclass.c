@@ -133,7 +133,7 @@ int isstart(const struct token_s *token)
 	case TT_NULL:
 	case TT_LEFT_PARANTHESIS:
 	case TT_LEFT_SQUARE:
-	//case TT_LEFT_CURLY:
+	case TT_LEFT_CURLY:
 		return 1;
 	default:
 		return 0;
@@ -146,11 +146,18 @@ int isend(const struct token_s *token)
 	case TT_END:
 	case TT_RIGHT_PARANTHESIS:
 	case TT_RIGHT_SQUARE:
-	//case TT_RIGHT_CURLY:
+	case TT_RIGHT_CURLY:
 		return 1;
 	default:
 		return 0;
 	}
+}
+
+int ismatchingend(const struct token_s *start, const struct token_s *end)
+{
+	return (start->type==TT_LEFT_PARANTHESIS && end->type==TT_RIGHT_PARANTHESIS)
+		|| (start->type==TT_LEFT_SQUARE && end->type==TT_RIGHT_SQUARE)
+		|| (start->type==TT_LEFT_CURLY && end->type==TT_RIGHT_CURLY);
 }
 
 int isbracket(const struct token_s *token)

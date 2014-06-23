@@ -675,7 +675,14 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 		if (isop(tokens[ix])) {
 			op=get_op(tokens[ix]);
 
-			if (op->assoc==OP_ASSOC_RIGHT) {
+			if (isstart(tokens[ix])) {
+				stackpush(op_stack, tokens[ix]);
+			} else if (isend(tokens[ix])) {
+				while (stacksize(op_stack)>0 
+					&& !ismatchingend(tokens[ix], stacktop(op_stack))) {
+					stackpush(rpn_stack, stackpop(op_stack));
+				}
+			} else if (op->assoc==OP_ASSOC_RIGHT) {
 				while (stacksize(op_stack)>0 
 					&& op->prec<get_op((tmpop_token=stackpop(op_stack)))->prec) {
 					stackpush(rpn_stack, tmpop_token);
