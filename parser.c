@@ -2,6 +2,7 @@
 
 #include "parser.h"
 #include "tokenclass.h"
+#include "stack.h"
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -477,7 +478,7 @@ struct op_s {
 	int assoc;	/* Operator associativity */
 	int arity;	/* Operator arity */
 };
-#if 0
+
 static struct op_s op_table[]={
 	{TT_PLUSPLUS_OP, 98, OP_ASSOC_LEFT, OP_RIGHT_UNARY},
 	{TT_MINUSMINUS_OP, 98, OP_ASSOC_LEFT, OP_RIGHT_UNARY},
@@ -556,19 +557,18 @@ static struct op_s op_table[]={
 
 	{TT_COMMA_OP, 72, OP_ASSOC_RIGHT, OP_BINARY}
 };
-#endif
-#if 0
-static struct op_s *get_op(int token)
+
+static struct op_s *get_op(struct token_s *token)
 {
 	size_t ix;
 
-	for (ix=0; ix<sizeof op_table/sizeof struct op_s; ++ix) {
-		if (op_table[ix].op==token) return &op_table[ix];
+	for (ix=0; ix<sizeof op_table/sizeof(struct op_s); ++ix) {
+		if (op_table[ix].op==token->type) return &op_table[ix];
 	}
 
 	return NULL;
 }
-#endif
+
 struct token_arities_s {
 	int type;
 	int left_unary;
@@ -661,20 +661,40 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 {
 	size_t ix=0;
 	struct node_s *node;
-//	struct op_s *op;
+	struct op_s *op;
+	struct op_s *tmpop;
+	STACK *op_stack, *rpn_stack;
+
+	op_stack=stackalloc(32);
+	rpn_stack=stackalloc(1024);
 
 	node=create_node(parent, NT_EXPR);
 	node->token=tokens[ix];
 
 	while (tokens[ix]->type!=TT_NULL) {
 		if (isop(tokens[ix])) {
-/*			op=get_op(tokens[ix]);
+			op=get_op(tokens[ix]);
+
 			if (op->assoc==OP_ASSOC_RIGHT) {
+				while (stacksize(op_stack)>0 
+					&& op->prec<(tmpop=stackpop(op_stack))->prec) {
+					stackpush(rpn_stack, tmpop);
+				}
 			} else {
-			}*/
+				while (stacksize(op_stack)>0 
+					&& op->prec<=(tmpop=stackpop(op_stack))->prec) {
+					stackpush(rpn_stack, tmpop);
+				}
+			}
+
+			stackpush(op_stack, op);
 		}
 	}
-	return 0;
+
+	stackfree(rpn_stack);
+	stackfree(op_stack);
+
+	return ix;
 }
 
 #if 0

@@ -71,3 +71,7 @@ void *stackpop(STACK *stack)
 	else return NULL;
 }
 
+size_t stacksize(STACK *stack)
+{
+	return stack->ix;
+}

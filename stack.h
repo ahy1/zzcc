@@ -16,6 +16,7 @@ int stackfree(STACK *stack);
 int stackpush(STACK *stack, void *data);
 void *stacktop(STACK *stack);
 void *stackpop(STACK *stack);
+size_t stacksize(STACK *stack);
 
 #endif
 
