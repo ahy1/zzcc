@@ -55,7 +55,7 @@ static void log_node(struct node_s *node, const char *fmt, ...)
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "LOG %-25s %-10s %-10s: ", 
+	fprintf(stderr, "%-25s %-10s %-10s: ", 
 		node_type_names[node->type], 
 		token_type(node->token), 
 		token_text(node->token));
@@ -64,21 +64,21 @@ static void log_node(struct node_s *node, const char *fmt, ...)
 	va_end(arg);
 }
 
-/*static void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
+static void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
 	int level=node->level;
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "LOG %-25s %-10s %-10s: ", 
+	fprintf(stderr, "%-25s %-10s %-10s: ", 
 		node_type_names[node->type], 
 		token_type(token), 
 		token_text(token));
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
 	va_end(arg);
-}*/
+}
 
 struct node_s *create_node(struct node_s *parent, int type)
 {
@@ -125,6 +125,26 @@ static int error_node(struct node_s *node, const char *fmt, ...)
 	return free_node(node);
 }
 
+static int error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
+{
+	va_list arg;
+	int level=node->level;
+
+	while(level--) (void)putc(' ', stderr);
+
+	fprintf(stderr, "ERROR (%-25s %-10s %-10s): ", 
+		node_type_names[node->type], 
+		token_type(token), 
+		token_text(token));
+	va_start(arg, fmt);
+	(void)vfprintf(stderr, fmt, arg);
+	va_end(arg);
+
+	exit(EXIT_FAILURE);
+
+	return free_node(node);
+}
+
 static int add_node(struct node_s *node)
 {
 	log_node(node, "add_node(): Adding to %s\n", 
@@ -154,7 +174,7 @@ void print_node(struct node_s *node, int ind)
 		print_token(" ", node->token);
 	} else (void)putchar('\n');
 
-	for (ix=0; ix<node->nsubnodes; ++ix) 
+	for (ix=0; ix<node->nsubnodes; ++ix)
 		print_node(node->subnodes[ix], ind+1);
 	indent(ind); printf("]\n");
 }
@@ -672,22 +692,34 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 	node->token=tokens[ix];
 
 	while (tokens[ix]->type!=TT_NULL) {
-		if (isop(tokens[ix])) {
+		log_node_token(node, tokens[ix], ">>>\n");
+		if (isleft(tokens[ix])) {
+			log_node_token(node, tokens[ix], ">>> left\n");
+			stackpush(op_stack, tokens[ix]);
+		} else if (isright(tokens[ix])) {
+			log_node_token(node, tokens[ix], ">>> right\n");
+			while (stacksize(op_stack)>0 
+				&& !ismatchingright(tokens[ix], stacktop(op_stack))) {
+				log_node_token(node, tokens[ix], ">>> s\n");
+				if (isleft(stacktop(op_stack))) {
+					return error_node_token(node, tokens[ix], "Unmatched\n"), (size_t)0;
+				}
+				stackpush(rpn_stack, stackpop(op_stack));
+			}
+			if (stacksize(op_stack)<1 || !ismatchingright(tokens[ix], stacktop(op_stack)))
+				return add_node(node), ix;
+
+		} else if (isop(tokens[ix])) {
 			op=get_op(tokens[ix]);
 
-			if (isstart(tokens[ix])) {
-				stackpush(op_stack, tokens[ix]);
-			} else if (isend(tokens[ix])) {
-				while (stacksize(op_stack)>0 
-					&& !ismatchingend(tokens[ix], stacktop(op_stack))) {
-					stackpush(rpn_stack, stackpop(op_stack));
-				}
-			} else if (op->assoc==OP_ASSOC_RIGHT) {
+			if (op->assoc==OP_ASSOC_RIGHT) {
+				log_node_token(node, tokens[ix], ">>> right-assoc\n");
 				while (stacksize(op_stack)>0 
 					&& op->prec<get_op((tmpop_token=stackpop(op_stack)))->prec) {
 					stackpush(rpn_stack, tmpop_token);
 				}
 			} else {
+				log_node_token(node, tokens[ix], ">>> left-assoc\n");
 				while (stacksize(op_stack)>0 
 					&& op->prec<=get_op((tmpop_token=stackpop(op_stack)))->prec) {
 					stackpush(rpn_stack, tmpop_token);
@@ -695,9 +727,14 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 			}
 
 			stackpush(op_stack, tokens[ix]);
-		} else if (isvalue(tokens[ix])) {
+		} else if (isvalue(tokens[ix]) || isname(tokens[ix])) {
 			stackpush(rpn_stack, tokens[ix]);
+		} else {
+			return add_node(node), ix;
+			//error_node_token(node, tokens[ix], "\n");
 		}
+
+		++ix;
 	}
 
 	while (stacksize(op_stack)>0) {

@@ -16,7 +16,9 @@ int isws(const struct token_s *token);
 int isop(const struct token_s *token);
 int isstart(const struct token_s *token);
 int isend(const struct token_s *token);
-int ismatchingend(const struct token_s *start, const struct token_s *end);
+int isleft(const struct token_s *token);
+int isright(const struct token_s *token);
+int ismatchingright(const struct token_s *start, const struct token_s *end);
 int isbracket(const struct token_s *token);
 int isvalue(const struct token_s *token);
 
