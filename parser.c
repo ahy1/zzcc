@@ -28,13 +28,18 @@ static char *node_type_names[]={
 	"NT_NAME",
 	"NT_NUMBER",
 	"NT_LABEL",
+	"NT_CASE",
+	"NT_DEFAULT",
 	"NT_DECLARATOR",
 	"NT_POINTER_QUALIFIER",
 	"NT_WHILE",
 	"NT_DO",
 	"NT_FOR",
 	"NT_IF",
+	"NT_SWITCH",
 	"NT_GOTO",
+	"NT_BREAK",
+	"NT_CONTINUE",
 	"NT_DECLDEF",
 	"NT_OPERATOR",
 
@@ -44,7 +49,7 @@ static char *node_type_names[]={
 };
 
 static size_t parse_stmt(struct node_s *parent, struct token_s **tokens);
-static size_t parse_expr(struct node_s *parent, struct token_s **tokens);
+static size_t parse_expr(struct node_s *parent, struct token_s **tokens, int op_exception_type);
 static size_t parse_block(struct node_s *parent, struct token_s **tokens);
 static size_t parse_declarator(struct node_s *parent, struct token_s **tokens);
 static size_t parse_declaration(struct node_s *parent, struct token_s **tokens);
@@ -417,7 +422,7 @@ static size_t parse_declarator(struct node_s *parent, struct token_s **tokens)
 
 	if (tokens[ix]->type==TT_LEFT_SQUARE) {
 		++ix;
-		if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+		if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 		if (tokens[ix]->type!=TT_RIGHT_SQUARE) return free_node(node), (size_t)0;
 		++ix;
 	}
@@ -445,7 +450,7 @@ static size_t parse_declaration(struct node_s *parent, struct token_s **tokens)
 		/* Bitfield specifier (only relevant for struct members) */
 		if (tokens[ix]->type==TT_COLON_OP) {
 			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 			else return error_node(node, "parse_declaration(): Missing bitfield size"), (size_t)0;
 		}
 
@@ -677,8 +682,8 @@ static int get_arity(size_t /*@unused@*/ix, struct token_s /*@unused@*/**tokens)
 }
 #endif
 
-
-static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
+/* op_exception_type: operator token not considered operator in this case (for case expr:) */
+static size_t parse_expr(struct node_s *parent, struct token_s **tokens, int op_exception_type)
 {
 	size_t ix=0;
 	struct node_s *node;
@@ -711,6 +716,9 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 				return add_node(node), ix;
 
 		} else if (isop(tokens[ix])) {
+			if (tokens[ix]->type==op_exception_type) {
+				return add_node(node), ix;
+			}
 			op=get_op(tokens[ix]);
 
 			if (op->assoc==OP_ASSOC_RIGHT) {
@@ -749,33 +757,6 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 }
 
 #if 0
-static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node;
-//	struct token_s dummy_token={NULL, 0, TT_NULL, 0, 0};
-
-	node=create_node(parent, NT_EXPR);
-	node->token=tokens[ix];
-
-	while (isvalue(tokens[ix]) || isname(tokens[ix]) || isop(tokens[ix]) /*|| isbracket(tokens[ix])*/) 
-	{
-		log_node_token(node, tokens[ix], "parse_expr() - Accepted\n");
-
-		if (isop(tokens[ix])) {
-			//int arity=get_arity(ix, tokens);
-		}
-
-		++ix;
-	}
-
-	if (ix) return add_node(node), ix;
-	else return free_node(node), (size_t)0;
-}
-#endif
-
-
-#if 0
 static size_t parse_x(struct node_s /*@unused@*/*parent, struct token_s /*@unused@*/**tokens)
 {
 //	size_t ix=0;
@@ -802,7 +783,7 @@ static size_t parse_return(struct node_s *parent, struct token_s **tokens)
 
 	if (tokens[ix]->type==TT_RETURN) {
 		++ix;
-		if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+		if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 		else return free_node(node), (size_t)0;
 		if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
 		else return free_node(node), (size_t)0;
@@ -822,7 +803,7 @@ static size_t parse_while(struct node_s *parent, struct token_s **tokens)
 		++ix;
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 			else return free_node(node), (size_t)0;
 			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node), (size_t)0;
 			++ix;
@@ -848,7 +829,7 @@ static size_t parse_do(struct node_s *parent, struct token_s **tokens)
 			++ix;
 			if ((parsed=parse_stmt(node, tokens+ix))) ix+=parsed;
 			if (tokens[ix]->type==TT_WHILE) {
-				if ((parsed=parse_expr(node, tokens+ix))) add_node(node), ix+=parsed;
+				if ((parsed=parse_expr(node, tokens+ix, 0))) add_node(node), ix+=parsed;
 				else return free_node(node), (size_t)0;
 			} else free_node(node), (size_t)0;
 		} else return free_node(node), (size_t)0;
@@ -870,15 +851,15 @@ static size_t parse_for(struct node_s *parent, struct token_s **tokens)
 		++ix;
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 			else return free_node(node), (size_t)0;
 			if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
 			else return free_node(node), (size_t)0;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 			else return free_node(node), (size_t)0;
 			if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
 			else return free_node(node), (size_t)0;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 			else return free_node(node), (size_t)0;
 
 			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node), (size_t)0;
@@ -901,11 +882,35 @@ static size_t parse_if(struct node_s *parent, struct token_s **tokens)
 		++ix;
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
 			else return free_node(node), (size_t)0;
 			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node), (size_t)0;
 			if ((parsed=parse_stmt(node, tokens+ix))) return add_node(node), ix+=parsed;
 			else return free_node(node), (size_t)0;
+		} else return free_node(node), (size_t)0;
+	} else return free_node(node), (size_t)0;
+}
+
+
+static size_t parse_switch(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0;
+	size_t parsed;
+	struct node_s *node;
+
+	node=create_node(parent, NT_SWITCH);
+	node->token=tokens[ix];
+
+	if (tokens[ix]->type==TT_SWITCH) {
+		++ix;
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+			++ix;
+			if ((parsed=parse_expr(node, tokens+ix, 0))) ix+=parsed;
+			else return error_node(node, "parse_switch(): No condition\n"), (size_t)0;
+			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node), (size_t)0;
+			++ix;
+			if ((parsed=parse_block(node, tokens+ix))) return add_node(node), ix+=parsed;
+			else return error_node(node, "parse_switch(): No switch block\n"), (size_t)0;
 		} else return free_node(node), (size_t)0;
 	} else return free_node(node), (size_t)0;
 }
@@ -929,6 +934,38 @@ static size_t parse_goto(struct node_s *parent, struct token_s **tokens)
 	} else return free_node(node), (size_t)0;
 }
 
+static size_t parse_break(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0;
+	struct node_s *node;
+
+	node=create_node(parent, NT_BREAK);
+	node->token=tokens[ix];
+
+	if (tokens[ix]->type==TT_BREAK) {
+		++ix;
+		if (tokens[ix]->type!=TT_SEMICOLON_OP)
+			return error_node(node, "parse_break(): No terminating semicolon\n"), (size_t)0;
+		return add_node(node), ++ix;
+	} else return free_node(node), (size_t)0;
+}
+
+static size_t parse_continue(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0;
+	struct node_s *node;
+
+	node=create_node(parent, NT_CONTINUE);
+	node->token=tokens[ix];
+
+	if (tokens[ix]->type==TT_CONTINUE) {
+		++ix;
+		if (tokens[ix]->type!=TT_SEMICOLON_OP)
+			return error_node(node, "parse_continue(): No terminating semicolon\n"), (size_t)0;
+		return add_node(node), ++ix;
+	} else return free_node(node), (size_t)0;
+}
+
 static size_t parse_stmt(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed;
@@ -945,8 +982,11 @@ static size_t parse_stmt(struct node_s *parent, struct token_s **tokens)
 		|| (parsed=parse_do(node, tokens))
 		|| (parsed=parse_for(node, tokens))
 		|| (parsed=parse_if(node, tokens))
+		|| (parsed=parse_switch(node, tokens))
 		|| (parsed=parse_goto(node, tokens))
-		|| ((parsed=parse_expr(node, tokens)) && tokens[parsed]->type==TT_SEMICOLON_OP && ++parsed)) {
+		|| (parsed=parse_break(node, tokens))
+		|| (parsed=parse_continue(node, tokens))
+		|| ((parsed=parse_expr(node, tokens, 0)) && tokens[parsed]->type==TT_SEMICOLON_OP && ++parsed)) {
 
 		return add_node(node), parsed;
 	} else return free_node(node), (size_t)0;
@@ -970,6 +1010,46 @@ static size_t parse_label(struct node_s *parent, struct token_s **tokens)
 	return free_node(node), (size_t)0;
 }
 
+static size_t parse_case(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0;
+	size_t parsed;
+	struct node_s *node;
+
+	node=create_node(parent, NT_CASE);
+
+	node->token=tokens[ix];
+
+	if (tokens[ix]->type==TT_CASE) {
+		++ix;
+		if (!(parsed=parse_expr(node, tokens+ix, TT_COLON_OP))) 
+			return error_node(node, "parse_case(): No case expression\n"), (size_t)0;
+		ix+=parsed;
+		if (tokens[ix]->type==TT_COLON_OP) return add_node(node), ++ix;
+		else error_node(node, "parse_case(): No terminating colon\n");
+	} else return free_node(node), (size_t)0;
+
+	return free_node(node), (size_t)0;
+}
+
+static size_t parse_default(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0;
+	struct node_s *node;
+
+	node=create_node(parent, NT_DEFAULT);
+
+	node->token=tokens[ix];
+
+	if (tokens[ix]->type==TT_DEFAULT) {
+		++ix;
+		if (tokens[ix]->type==TT_COLON_OP) return add_node(node), ++ix;
+		else error_node(node, "parse_default(): No terminating colon\n");
+	} else return free_node(node), (size_t)0;
+
+	return free_node(node), (size_t)0;
+}
+
 static size_t parse_block(struct node_s *parent, struct token_s **tokens)
 {
 	size_t ix=0;
@@ -987,6 +1067,8 @@ static size_t parse_block(struct node_s *parent, struct token_s **tokens)
 
 		while((parsed=parse_stmt(node, tokens+ix))
 			|| (parsed=parse_block(node, tokens+ix))
+			|| (parsed=parse_case(node, tokens+ix))
+			|| (parsed=parse_default(node, tokens+ix))
 			|| (parsed=parse_label(node, tokens+ix))) ix+=parsed;
 
 	} else return free_node(node), (size_t)0;
