@@ -8,7 +8,8 @@ for fname in *.c; do
 
 	../zzparser <"$fname" 2>>"$fname.stderr" >>"$fname.stdout"
 	if test $? != 0; then
-		break
+		echo "\tFailed"
+#		break
 	fi
 
 	echo "" >>"$fname.stdout"
