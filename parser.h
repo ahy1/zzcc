@@ -33,6 +33,7 @@ enum {
 	NT_DO,
 	NT_FOR,
 	NT_IF,
+	NT_GOTO,
 	NT_DECLDEF,
 	NT_OPERATOR,
 

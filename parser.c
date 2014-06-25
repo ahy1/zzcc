@@ -34,6 +34,7 @@ static char *node_type_names[]={
 	"NT_DO",
 	"NT_FOR",
 	"NT_IF",
+	"NT_GOTO",
 	"NT_DECLDEF",
 	"NT_OPERATOR",
 
@@ -909,6 +910,25 @@ static size_t parse_if(struct node_s *parent, struct token_s **tokens)
 	} else return free_node(node), (size_t)0;
 }
 
+static size_t parse_goto(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0;
+	struct node_s *node;
+
+	node=create_node(parent, NT_GOTO);
+	node->token=tokens[ix];
+
+	if (tokens[ix]->type==TT_GOTO) {
+		++ix;
+		if (!isname(tokens[ix])) 
+			return error_node(node, "parse_goto(): No label specified\n"), (size_t)0;
+		node->token=tokens[ix++];
+		if (tokens[ix]->type!=TT_SEMICOLON_OP)
+			return error_node(node, "parse_goto(): No terminating semicolon\n"), (size_t)0;
+		return add_node(node), ++ix;
+	} else return free_node(node), (size_t)0;
+}
+
 static size_t parse_stmt(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed;
@@ -925,6 +945,7 @@ static size_t parse_stmt(struct node_s *parent, struct token_s **tokens)
 		|| (parsed=parse_do(node, tokens))
 		|| (parsed=parse_for(node, tokens))
 		|| (parsed=parse_if(node, tokens))
+		|| (parsed=parse_goto(node, tokens))
 		|| ((parsed=parse_expr(node, tokens)) && tokens[parsed]->type==TT_SEMICOLON_OP && ++parsed)) {
 
 		return add_node(node), parsed;
