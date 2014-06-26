@@ -179,8 +179,9 @@ int isright(const struct token_s *token)
 int ismatchingright(const struct token_s *start, const struct token_s *end)
 {
 	return (start->type==TT_LEFT_PARANTHESIS && end->type==TT_RIGHT_PARANTHESIS)
-		|| (start->type==TT_LEFT_SQUARE && end->type==TT_RIGHT_SQUARE);
-	//	|| (start->type==TT_LEFT_CURLY && end->type==TT_RIGHT_CURLY);
+		|| (start->type==TT_LEFT_SQUARE && end->type==TT_RIGHT_SQUARE)
+	//	|| (start->type==TT_LEFT_CURLY && end->type==TT_RIGHT_CURLY)
+		|| (start->type==TT_QUESTION_OP && end->type==TT_COLON_OP);
 }
 
 int isbracket(const struct token_s *token)
