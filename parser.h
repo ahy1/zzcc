@@ -106,7 +106,6 @@ struct node_s *create_node(struct node_s *parent, int type);
 int free_node(struct node_s *node);
 void print_node(struct node_s *node, int ind);
 void print_node_json(struct node_s *node, int ind);
-int isws(const struct token_s *token);
 size_t parse(struct node_s *parent, struct token_s **tokens);
 
 #endif
