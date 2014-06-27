@@ -6,7 +6,7 @@
 #include <string.h>
 
 
-char *token_type_names[]={
+static char *token_type_names[]={
 	"TT_NULL",
 	"TT_END",
 	"TT_ERROR",
