@@ -122,6 +122,8 @@ struct token_s {
 struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno);
 int freetoken(struct token_s *token);
 const char *token_text(const struct token_s *token);
+int token_lno(const struct token_s *token);
+int token_cno(const struct token_s *token);
 const char *token_type(const struct token_s *token);
 void print_token(const char *prefix, const struct token_s *token);
 

@@ -482,6 +482,18 @@ const char *token_text(const struct token_s *token)
 	return sbcstr(token->sb, token->sbix);
 }
 
+int token_lno(const struct token_s *token)
+{
+	if (!token) return -1;
+	return token->lno;
+}
+
+int token_cno(const struct token_s *token)
+{
+	if (!token) return -1;
+	return token->cno;
+}
+
 const char *token_type(const struct token_s *token)
 {
 	if (!token) return "";

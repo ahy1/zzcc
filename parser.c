@@ -61,8 +61,10 @@ static void log_node(struct node_s *node, const char *fmt, ...)
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "%-25s %-10s %-10s: ", 
+	fprintf(stderr, "%-25s %3d/%3d %-10s %-10s: ", 
 		node_type_names[node->type], 
+		token_lno(node->token),
+		token_cno(node->token),
 		token_type(node->token), 
 		token_text(node->token));
 	va_start(arg, fmt);
@@ -77,8 +79,11 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "%-25s %-10s %-10s: ", 
+	//fprintf(stderr, "%-25s %-10s %-10s: ", 
+	fprintf(stderr, "%-25s %3d/%3d %-10s %-10s: ", 
 		node_type_names[node->type], 
+		token_lno(token),
+		token_cno(token),
 		token_type(token), 
 		token_text(token));
 	va_start(arg, fmt);
