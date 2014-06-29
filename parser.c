@@ -358,6 +358,9 @@ static size_t parse_typespec(struct node_s *parent, struct token_s **tokens)
 
 	while ((parsed=parse_type_storage_qualifier(node, tokens+ix))) ix+=parsed;
 
+	if (ix>0) return add_node(node), ix;
+	else return free_node(node), (size_t)0;
+
 	return ix;
 }
 
