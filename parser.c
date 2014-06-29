@@ -332,6 +332,15 @@ static size_t parse_struct_union_spec(struct node_s *parent, struct token_s **to
 	return add_node(node), ix;
 }
 
+static size_t parse_type_storage_qualifier(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0;
+
+	if ((parsed=parse_struct_union_spec(parent, tokens))) return parsed;
+	else if (istype(tokens[ix]) || isstorage(tokens[ix]) || isqualifier(tokens[ix])) return (size_t)1;
+	return (size_t)0;
+}
+
 
 static size_t parse_typespec(struct node_s *parent, struct token_s **tokens)
 {
@@ -342,11 +351,9 @@ static size_t parse_typespec(struct node_s *parent, struct token_s **tokens)
 	node=create_node(parent, NT_TYPESPEC);
 	node->token=tokens[ix];
 
-	if ((parsed=parse_struct_union_spec(node, tokens+ix))) ix+=parsed;
+	while ((parsed=parse_type_storage_qualifier(node, tokens+ix))) ix+=parsed;
 
-	while (istype(tokens[ix]) || isstorage(tokens[ix]) || isqualifier(tokens[ix])) ++ix;
-
-	return add_node(node), ix;
+	return ix;
 }
 
 static size_t parse_pointer_qualifier(struct node_s *parent, struct token_s **tokens)
