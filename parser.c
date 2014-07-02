@@ -457,22 +457,26 @@ static size_t parse_declarator(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_DECLARATROR, tokens[ix]);
+	node=create_node(parent, NT_DECLARATOR, tokens[ix]);
 
 	while ((parsed=parse_pointer_qualifier(node, tokens+ix))) {
 		ix+=parsed;
 	}
 
-	if ((parsed=parse_name(node, tokens+ix))) node->token=tokens[ix], ix+=parsed;
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+		++ix;
+		if ((parsed=parse_declarator(node, tokens+ix))) ix+=parsed;
+		else return error_node(node, "parse_declarator() Missing inner declarator"), (size_t)0;
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else return error_node(node, "parse_declarator() Expected right paranthesis"), (size_t)0;
+	} else if ((parsed=parse_name(node, tokens+ix))) node->token=tokens[ix], ix+=parsed;
 
 	if (tokens[ix]->type==TT_LEFT_SQUARE) {
 		++ix;
 		if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
 		if (tokens[ix]->type!=TT_RIGHT_SQUARE) return free_node(node), (size_t)0;
 		++ix;
-	}
-
-	if ((parsed=parse_argspeclist(node, tokens+ix))) ix+=parsed;
+	} else if ((parsed=parse_argspeclist(node, tokens+ix))) ix+=parsed;
 
 	return add_node(node), ix;
 }
