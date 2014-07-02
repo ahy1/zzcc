@@ -105,7 +105,7 @@ struct node_s {
 	size_t ntypealiases;
 };
 
-struct node_s *create_node(struct node_s *parent, int type);
+struct node_s *create_node(struct node_s *parent, int type, struct token_s *token);
 int free_node(struct node_s *node);
 void print_node(struct node_s *node, int ind);
 void print_node_json(struct node_s *node, int ind);

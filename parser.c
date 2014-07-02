@@ -91,7 +91,7 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 	va_end(arg);
 }
 
-struct node_s *create_node(struct node_s *parent, int type)
+struct node_s *create_node(struct node_s *parent, int type, struct token_s *token)
 {
 	struct node_s *node=(struct node_s *)calloc(1, sizeof *node);
 	if (!node) return NULL;
@@ -102,6 +102,7 @@ struct node_s *create_node(struct node_s *parent, int type)
 		node->scope_parent=parent;
 	node->level=node->parent->level+1;
 	node->type=type;
+	node->token=token;
 
 	log_node(node, "create_node()\n");
 
@@ -307,8 +308,7 @@ static size_t parse_name(struct node_s *parent, struct token_s **tokens)
 {
 	struct node_s *node;
 
-	node=create_node(parent, NT_NAME);
-	node->token=tokens[0];
+	node=create_node(parent, NT_NAME, tokens[0]);
 
 	if (isname(tokens[0])) return add_node(node), (size_t)1;
 	else return free_node(node), (size_t)0;
@@ -333,8 +333,7 @@ static size_t parse_struct_union_member_list(struct node_s *parent, struct token
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_STRUCT_UNION_MEMBER_LIST);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_STRUCT_UNION_MEMBER_LIST, tokens[ix]);
 
 	if (tokens[ix]->type==TT_LEFT_CURLY) {
 		++ix;
@@ -356,8 +355,7 @@ static size_t parse_struct_union_spec(struct node_s *parent, struct token_s **to
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_STRUCTSPEC);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_STRUCTSPEC, tokens[ix]);
 
 	if (tokens[ix]->type==TT_STRUCT) {
 		++ix;
@@ -389,8 +387,7 @@ static size_t parse_typespec(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_TYPESPEC);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_TYPESPEC, tokens[ix]);
 
 	while ((parsed=parse_type_storage_qualifier(node, tokens+ix))) ix+=parsed;
 
@@ -405,8 +402,7 @@ static size_t parse_pointer_qualifier(struct node_s *parent, struct token_s **to
 	size_t ix=0;
 	struct node_s *node;
 
-	node=create_node(parent, NT_POINTER_QUALIFIER);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_POINTER_QUALIFIER, tokens[ix]);
 
 	if (tokens[ix]->type==TT_STAR_OP) {		/* Pointer ref. operator */
 		return add_node(node), ++ix;
@@ -421,7 +417,7 @@ static size_t parse_argspec(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_ARGSPEC);
+	node=create_node(parent, NT_ARGSPEC, NULL);
 
 	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
 	else return free_node(node), (size_t)0;
@@ -438,7 +434,7 @@ static size_t parse_argspeclist(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_ARGSPECLIST);
+	node=create_node(parent, NT_ARGSPECLIST, NULL);
 
 	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
 	else return free_node(node), (size_t)0;
@@ -461,8 +457,7 @@ static size_t parse_declarator(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_DECLARATROR);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_DECLARATROR, tokens[ix]);
 
 	while ((parsed=parse_pointer_qualifier(node, tokens+ix))) {
 		ix+=parsed;
@@ -489,8 +484,7 @@ static size_t parse_declaration(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_DECL);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_DECL, tokens[ix]);
 
 	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
 	else return free_node(node), (size_t)0;
@@ -526,8 +520,7 @@ static size_t parse_typedef(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_DECL);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_DECL, tokens[ix]);
 
 	if (istypedef(tokens[ix])) ++ix;
 	else return free_node(node), (size_t)0;
@@ -746,8 +739,7 @@ static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
 	match_stack=stackalloc(32);		/* Stack tokens needing a matching token */
 	rpn_stack=stackalloc(1024);		/* Parsed RPN stream */
 
-	node=create_node(parent, NT_EXPR);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_EXPR, tokens[ix]);
 
 	while (tokens[ix]->type!=TT_NULL) {
 		log_node_token(node, tokens[ix], ">>>\n");
@@ -831,8 +823,7 @@ static size_t parse_x(struct node_s /*@unused@*/*parent, struct token_s /*@unuse
 //	size_t parsed;
 //	struct node_s *node;
 
-	//node=create_node(parent, NT_X);
-	//node->token=tokens[ix];
+	//node=create_node(parent, NT_X, tokens[ix]);
 
 	//if (ix) return add_node(node), ix;
 
@@ -846,8 +837,7 @@ static size_t parse_return(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_RETURN);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_RETURN, tokens[ix]);
 
 	if (tokens[ix]->type==TT_RETURN) {
 		++ix;
@@ -864,8 +854,7 @@ static size_t parse_while(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_WHILE);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_WHILE, tokens[ix]);
 
 	if (tokens[ix]->type==TT_WHILE) {
 		++ix;
@@ -888,8 +877,7 @@ static size_t parse_do(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_DO);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_DO, tokens[ix]);
 
 	if (tokens[ix]->type==TT_DO) {
 		++ix;
@@ -912,7 +900,7 @@ static size_t parse_for(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_FOR);
+	node=create_node(parent, NT_FOR, tokens[ix]);
 	node->token=tokens[ix];
 
 	if (tokens[ix]->type==TT_FOR) {
@@ -943,8 +931,7 @@ static size_t parse_if(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_IF);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_IF, tokens[ix]);
 
 	if (tokens[ix]->type==TT_IF) {
 		++ix;
@@ -966,8 +953,7 @@ static size_t parse_switch(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_SWITCH);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_SWITCH, tokens[ix]);
 
 	if (tokens[ix]->type==TT_SWITCH) {
 		++ix;
@@ -988,8 +974,7 @@ static size_t parse_goto(struct node_s *parent, struct token_s **tokens)
 	size_t ix=0;
 	struct node_s *node;
 
-	node=create_node(parent, NT_GOTO);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_GOTO, tokens[ix]);
 
 	if (tokens[ix]->type==TT_GOTO) {
 		++ix;
@@ -1007,8 +992,7 @@ static size_t parse_break(struct node_s *parent, struct token_s **tokens)
 	size_t ix=0;
 	struct node_s *node;
 
-	node=create_node(parent, NT_BREAK);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_BREAK, tokens[ix]);
 
 	if (tokens[ix]->type==TT_BREAK) {
 		++ix;
@@ -1023,8 +1007,7 @@ static size_t parse_continue(struct node_s *parent, struct token_s **tokens)
 	size_t ix=0;
 	struct node_s *node;
 
-	node=create_node(parent, NT_CONTINUE);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_CONTINUE, tokens[ix]);
 
 	if (tokens[ix]->type==TT_CONTINUE) {
 		++ix;
@@ -1039,9 +1022,7 @@ static size_t parse_stmt(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_STMT);
-
-	node->token=tokens[0];
+	node=create_node(parent, NT_STMT, tokens[0]);
 
 	if ((parsed=parse_return(node, tokens))
 		|| (parsed=parse_declaration(node, tokens))
@@ -1066,9 +1047,7 @@ static size_t parse_label(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_LABEL);
-
-	node->token=tokens[ix];
+	node=create_node(parent, NT_LABEL, tokens[ix]);
 
 	if ((parsed=parse_name(node, tokens))) {
 		ix+=parsed;
@@ -1084,9 +1063,7 @@ static size_t parse_case(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_CASE);
-
-	node->token=tokens[ix];
+	node=create_node(parent, NT_CASE, tokens[ix]);
 
 	if (tokens[ix]->type==TT_CASE) {
 		++ix;
@@ -1105,9 +1082,7 @@ static size_t parse_default(struct node_s *parent, struct token_s **tokens)
 	size_t ix=0;
 	struct node_s *node;
 
-	node=create_node(parent, NT_DEFAULT);
-
-	node->token=tokens[ix];
+	node=create_node(parent, NT_DEFAULT, tokens[ix]);
 
 	if (tokens[ix]->type==TT_DEFAULT) {
 		++ix;
@@ -1124,8 +1099,7 @@ static size_t parse_block(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_BLOCK);
-	node->token=tokens[ix];
+	node=create_node(parent, NT_BLOCK, tokens[ix]);
 
 	if (tokens[ix]->type==TT_LEFT_CURLY) {
 		log_node(node, "TT_LEFT_CURLY\n");
@@ -1198,7 +1172,7 @@ static size_t parse_funcdef(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_FUNCDEF);
+	node=create_node(parent, NT_FUNCDEF, NULL);
 
 	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
 
@@ -1223,7 +1197,7 @@ size_t parse(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	node=create_node(parent, NT_UNIT);
+	node=create_node(parent, NT_UNIT, NULL);
 
 	while (tokens[ix]->type!=TT_END) {
 		log_node(node, "parse() - Start of loop\n");
