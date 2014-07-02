@@ -464,7 +464,6 @@ static size_t parse_declarator(struct node_s *parent, struct token_s **tokens)
 	}
 
 	if ((parsed=parse_name(node, tokens+ix))) node->token=tokens[ix], ix+=parsed;
-	else return free_node(node), (size_t)0;
 
 	if (tokens[ix]->type==TT_LEFT_SQUARE) {
 		++ix;
