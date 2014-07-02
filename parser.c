@@ -423,7 +423,6 @@ static size_t parse_argspec(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node), (size_t)0;
 
 	if ((parsed=parse_declarator(node, tokens+ix))) ix+=parsed;
-	else return error_node(node, "Missing declarator after typespec\n"), (size_t)0;
 
 	return add_node(node), ix;
 }
