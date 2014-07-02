@@ -337,7 +337,7 @@ static size_t parse_struct_union_member_list(struct node_s *parent, struct token
 
 	if (tokens[ix]->type==TT_LEFT_CURLY) {
 		++ix;
-	} else return error_node(node, "parse_struct_union_member_list(): Missing struct block start"), (size_t)0;
+	} else return free_node(node), (size_t)0;
 
 	while ((parsed=parse_declaration(node, tokens+ix))) {
 		ix+=parsed;
