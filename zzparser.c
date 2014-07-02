@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 		//print_token("main()", token);
 
 		/* TODO: Handle TT_UNKNOWN as error in the future */
-		if (!isws(token) && token->type!=TT_NULL) {
+		if (!istobeignored(token) && token->type!=TT_NULL) {
 			//(void)puts(" Added");
 			tokens=(struct token_s **)realloc(tokens, ++ntokens * sizeof *tokens);
 			tokens[ntokens-1]=token;

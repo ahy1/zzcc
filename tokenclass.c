@@ -6,7 +6,6 @@
 
 #include <string.h>
 
-
 int istype(const struct token_s *token)
 {
 	return token->type==TT_TEXTUAL 
@@ -202,5 +201,11 @@ int isbracket(const struct token_s *token)
 int isvalue(const struct token_s *token)
 {
 	return token->type==TT_NUMBER || token->type==TT_STRING || token->type==TT_CHARACTER;
+}
+
+int istobeignored(const struct token_s *token)
+{
+	return isws(token)
+		|| (isname(token) && !strcmp(token_text(token), "__extension__"));
 }
 

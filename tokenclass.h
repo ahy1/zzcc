@@ -21,6 +21,7 @@ int isright(const struct token_s *token);
 int ismatchingright(const struct token_s *start, const struct token_s *end);
 int isbracket(const struct token_s *token);
 int isvalue(const struct token_s *token);
+int istobeignored(const struct token_s *token);
 
 #endif
 
