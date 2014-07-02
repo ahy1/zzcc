@@ -97,6 +97,9 @@ struct node_s *create_node(struct node_s *parent, int type)
 	if (!node) return NULL;
 
 	node->parent=parent;
+	node->scope_parent=parent->scope_parent;
+	if (parent->type==NT_BLOCK || parent->type==NT_FUNCDEF || parent->type==NT_UNIT)
+		node->scope_parent=parent;
 	node->level=node->parent->level+1;
 	node->type=type;
 
@@ -156,6 +159,11 @@ static int error_node_token(struct node_s *node, struct token_s *token, const ch
 	return free_node(node);
 }
 
+static struct node_s *last_subnode(struct node_s *node)
+{
+	return node->nsubnodes>0 ? node->subnodes[node->nsubnodes-1] : NULL;
+}
+
 static int add_node(struct node_s *node)
 {
 	log_node(node, "add_node(): Adding to %s\n", 
@@ -164,6 +172,34 @@ static int add_node(struct node_s *node)
 	node->parent->subnodes=(struct node_s **)realloc(
 		node->parent->subnodes, ++node->parent->nsubnodes * sizeof node);
 	node->parent->subnodes[node->parent->nsubnodes-1]=node;
+
+	return 0;
+}
+
+static int add_typealias(struct node_s *node)
+{
+	const char *text=token_text(node->token);
+
+	log_node(node, "add_typealias(): Adding to %s - %s\n", 
+		node_type_names[node->scope_parent->type], text);
+
+	node->scope_parent->typealiases=(const char **)realloc(
+		node->scope_parent->typealiases, ++node->scope_parent->ntypealiases * sizeof node);
+	node->scope_parent->typealiases[node->scope_parent->ntypealiases-1]=text;
+
+	return 0;
+}
+
+static int istypealias(const struct node_s *node, const struct token_s *token)
+{
+	size_t ix;
+
+	if (node->scope_parent) {
+		for (ix=0; ix<node->scope_parent->ntypealiases; ++ix) {
+			if (!strcmp(token_text(token), node->scope_parent->typealiases[ix])) return 1;
+		}
+		return istypealias(node->scope_parent, token);
+	}
 
 	return 0;
 }
@@ -342,7 +378,7 @@ static size_t parse_type_storage_qualifier(struct node_s *parent, struct token_s
 	size_t parsed, ix=0;
 
 	if ((parsed=parse_struct_union_spec(parent, tokens))) return parsed;
-	else if (istype(tokens[ix]) || isstorage(tokens[ix]) || isqualifier(tokens[ix])) return (size_t)1;
+	else if (istype(tokens[ix]) || istypealias(parent, tokens[ix]) || isstorage(tokens[ix]) || isqualifier(tokens[ix])) return (size_t)1;
 	return (size_t)0;
 }
 
@@ -432,7 +468,7 @@ static size_t parse_declarator(struct node_s *parent, struct token_s **tokens)
 		ix+=parsed;
 	}
 
-	if ((parsed=parse_name(node, tokens+ix))) ix+=parsed;
+	if ((parsed=parse_name(node, tokens+ix))) node->token=tokens[ix], ix+=parsed;
 	else return free_node(node), (size_t)0;
 
 	if (tokens[ix]->type==TT_LEFT_SQUARE) {
@@ -500,6 +536,7 @@ static size_t parse_typedef(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node), (size_t)0;
 
 	while ((parsed=parse_declarator(node, tokens+ix))) {
+		add_typealias(last_subnode(node));
 		ix+=parsed;
 
 		if (tokens[ix]->type==TT_COMMA_OP) ++ix;

@@ -94,12 +94,15 @@ enum {
 
 struct node_s {
 	struct node_s *parent;
+	struct node_s *scope_parent;	/* The nodes surrounding scope */
 	int type;
 	int subtype;			/* For operators, the token type is here */
 	int level;			/* Level in syntax three */
 	struct token_s *token;		/* (optional) Token identifying data for this node */
 	struct node_s **subnodes;
 	size_t nsubnodes;
+	const char **typealiases;
+	size_t ntypealiases;
 };
 
 struct node_s *create_node(struct node_s *parent, int type);
