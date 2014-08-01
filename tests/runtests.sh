@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for fname in *.c; do
+for fname in test_*.c; do
 	echo "Testing $fname"
 
 	echo "" >"$fname.stdout"
