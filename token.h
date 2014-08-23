@@ -76,7 +76,8 @@ enum {
 	TT_QUESTION_OP,
 	TT_COLON_OP,
 	TT_STRUCT,
-	TT_UNION
+	TT_UNION,
+	TT_ENUM
 };
 
 /* Numeric sub-types */

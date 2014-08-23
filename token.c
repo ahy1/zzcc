@@ -76,7 +76,8 @@ static char *token_type_names[]={
 	"TT_QUESTION_OP",
 	"TT_COLON_OP",
 	"TT_STRUCT",
-	"TT_UNION"
+	"TT_UNION",
+	"TT_ENUM"
 };
 
 /* << Rewrite for generic lexing 
@@ -205,6 +206,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "default")) token->type=TT_DEFAULT;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "struct")) token->type=TT_STRUCT;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "union")) token->type=TT_UNION;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "enum")) token->type=TT_ENUM;
 		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '0':

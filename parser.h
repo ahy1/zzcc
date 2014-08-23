@@ -89,6 +89,30 @@ enum {
 	NT_BIT_OR_ASSIGNMENT,
 	NT_COMMA,*/
 
+	NTX_STORAGE_SPECIFIER,
+	NTX_STRUCT_UNION_SPECIFIER,
+	NTX_ENUM_SPECIFIER,
+	NTX_TYPE_SPECIFIER,
+	NTX_TYPE_QUAL,
+	NTX_FUNCTION_SPECIFIER,
+	NTX_POINTER,
+	NTX_PARAMETER_LIST,
+	NTX_IDENTIFIER,
+	NTX_DIRECT_DECLARATOR,
+	NTX_PARAMETER_TYPE_LIST,
+	NTX_IDENTIFIER_LIST,
+	NTX_DECLARATOR,
+	NTX_INIT_DECLARATOR,
+	NTX_DECLARATION,
+	NTX_INIT_DECLARATOR_LIST,
+	NTX_DECLARATION_STMT,
+	NTX_ABSTRACT_DECLARATOR,
+	NTX_PARAMETER_DECLARATION,
+	NTX_DIRECT_ABSTRACT_DECLARATOR,
+	NTX_DECLARATION_SPECIFIER,
+	NTX_DECLARATION_SPECIFIERS,
+	NTX_INITIALIZER,
+
 	NT_DUMMY
 };
 
@@ -106,7 +130,7 @@ struct node_s {
 };
 
 struct node_s *create_node(struct node_s *parent, int type, struct token_s *token);
-int free_node(struct node_s *node);
+size_t free_node(struct node_s *node);
 void print_node(struct node_s *node, int ind);
 void print_node_json(struct node_s *node, int ind);
 size_t parse(struct node_s *parent, struct token_s **tokens);

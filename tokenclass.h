@@ -10,6 +10,7 @@ int istypedef(const struct token_s *token);
 /*int isstruct(const struct token_s *token);
 int isunion(const struct token_s *token);*/
 int isqualifier(const struct token_s *token);
+int isfuncspec(const struct token_s *token);
 int isname(const struct token_s *token);
 int isnumber(const struct token_s *token);
 int isws(const struct token_s *token);

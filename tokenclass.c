@@ -8,25 +8,31 @@
 
 int istype(const struct token_s *token)
 {
+	const char *text=sbcstr(token->sb, token->sbix);
+
 	return token->type==TT_TEXTUAL 
-		&& (!strcmp(sbcstr(token->sb, token->sbix), "void")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "char")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "short")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "int")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "long")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "float")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "double")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "signed")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "unsigned"));
+		&& (!strcmp(text, "void")
+			|| !strcmp(text, "char")
+			|| !strcmp(text, "short")
+			|| !strcmp(text, "int")
+			|| !strcmp(text, "long")
+			|| !strcmp(text, "float")
+			|| !strcmp(text, "double")
+			|| !strcmp(text, "signed")
+			|| !strcmp(text, "unsigned")
+			|| !strcmp(text, "_Bool")
+			|| !strcmp(text, "_Complex"));
 }
 
 int isstorage(const struct token_s *token)
 {
+	const char *text=sbcstr(token->sb, token->sbix);
+
 	return token->type==TT_TEXTUAL 
-		&& (!strcmp(sbcstr(token->sb, token->sbix), "auto")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "register")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "static")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "extern"));
+		&& (!strcmp(text, "auto")
+			|| !strcmp(text, "register")
+			|| !strcmp(text, "static")
+			|| !strcmp(text, "extern"));
 }
 
 int istypedef(const struct token_s *token)
@@ -51,9 +57,18 @@ int isunion(const struct token_s *token)
 
 int isqualifier(const struct token_s *token)
 {
+	const char *text=sbcstr(token->sb, token->sbix);
+
 	return token->type==TT_TEXTUAL 
-		&& (!strcmp(sbcstr(token->sb, token->sbix), "const")
-			|| !strcmp(sbcstr(token->sb, token->sbix), "volatile"));
+		&& (!strcmp(text, "const")
+			|| !strcmp(text, "restrict")
+			|| !strcmp(text, "volatile"));
+}
+
+int isfuncspec(const struct token_s *token)
+{
+	return token->type==TT_TEXTUAL
+		&& !strcmp(sbcstr(token->sb, token->sbix), "inline");
 }
 
 int isname(const struct token_s *token)
