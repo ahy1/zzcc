@@ -837,6 +837,17 @@ static size_t parsex_direct_declarator(struct node_s *parent, struct token_s **t
 
 	if ((parsed=parse_name(node, tokens+ix))) {
 		ix+=parsed;
+
+		/* Bitfields - Even if only available for structs, we allow it
+		   for all declarators (for simplicity) */
+		if (tokens[ix]->type==TT_COLON_OP) {
+			++ix;
+
+			if ((parsed=parse_expr(node, tokens+ix))) {
+				ix+=parsed;
+				return add_node(node), ix;
+			} else return error_node(node, "Expected bitfield specifier\n");
+		}
 	} else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
