@@ -777,6 +777,7 @@ static size_t parsex_parameter_declaration(struct node_s *parent, struct token_s
 	} else return free_node(node);
 }
 
+#if 0
 static size_t parsex_direct_abstract_declarator(struct node_s *parent, struct token_s **tokens)
 {
 	size_t ix=0, parsed;
@@ -811,6 +812,7 @@ static size_t parsex_direct_abstract_declarator(struct node_s *parent, struct to
 
 	return add_node(node), ix;
 }
+#endif
 
 static size_t parsex_parameter_list(struct node_s *parent, struct token_s **tokens)
 {
@@ -935,7 +937,7 @@ static size_t parsex_declaration(struct node_s *parent, struct token_s **tokens)
 		NTX_INIT_DECLARATOR_LIST,
 		parsex_init_declarator,
 		TT_COMMA_OP))) ix+=parsed;
-	else return error_node(node, "Expected init declarator list\n"), (size_t)0;
+/*	else return error_node(node, "Expected init declarator list\n"), (size_t)0;*/
 
 	return add_node(node), ix;
 }
