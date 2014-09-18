@@ -193,16 +193,14 @@ static struct node_s *last_subnode(struct node_s *node)
 
 static int add_node(struct node_s *node)
 {
-	log_node(node, "add_node(): Adding to %s\n", 
-		node_type_names[node->parent->type]);
+	log_node(node, "add_node(): Adding to %s\n"
+			" *** Added %s, current_tree: <<<\n", 
+		node_type_names[node->parent->type],
+		node_type_names[node->type]);
 
 	node->parent->subnodes=(struct node_s **)realloc(
 		node->parent->subnodes, ++node->parent->nsubnodes * sizeof node);
 	node->parent->subnodes[node->parent->nsubnodes-1]=node;
-
-	printf(" *** Added %s, current tree: <<<\n", node_type_names[node->type]);
-	print_node_json(g_root_node, 6);
-	printf("\n >>>\n");
 
 	return 0;
 }
