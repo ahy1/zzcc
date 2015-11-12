@@ -77,7 +77,29 @@ enum {
 	TT_COLON_OP,
 	TT_STRUCT,
 	TT_UNION,
-	TT_ENUM
+	TT_ENUM,
+	TT_INLINE,
+	TT_RESTRICT,
+	TT_CONST,
+	TT_VOLATILE,
+	TT_VOID,
+	TT_CHAR,
+	TT_SHORT,
+	TT_INT,
+	TT_LONG,
+	TT_FLOAT,
+	TT_DOUBLE,
+	TT_SIGNED,
+	TT_UNSIGNED,
+	TT_BOOL,
+	TT_COMPLEX,
+	TT_TYPEDEF,
+	TT_EXTERN,
+	TT_STATIC,
+	TT_AUTO,
+	TT_REGISTER,
+	TT_SIZEOF,
+	TT_ELIPSIS,
 };
 
 /* Numeric sub-types */
@@ -123,6 +145,7 @@ struct token_s {
 struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno);
 int freetoken(struct token_s *token);
 const char *token_text(const struct token_s *token);
+const char *token_fname(const struct token_s *token);
 int token_lno(const struct token_s *token);
 int token_cno(const struct token_s *token);
 const char *token_type(const struct token_s *token);

@@ -1,5 +1,4 @@
 
-
 #include "parser.h"
 #include "tokenclass.h"
 #include "stack.h"
@@ -9,113 +8,120 @@
 #include <string.h>
 
 static char *node_type_names[]={
-	"NT_NULL",
+	"TRANSLATION_UNIT",
+	"EXTERNAL_DECLARATION",
+	"FUNCTION_DEFINITION",
+	"COMPOUND_STATEMENT",
+	"BLOCK_ITEM_LIST",
+	"BLOCK_ITEM",
+	"STATEMENT",
+	"JUMP_STATEMENT",
+	"ITERATION_STATEMENT",
+	"SELECTION_STATEMENT",
+	"MULTIPLICATIVE_EXPRESSION",
+	"ADDITIVE_EXPRESSION",
+	"SHIFT_EXPRESSION",
+	"RELATIONAL_EXPRESSION",
+	"EQUALITY_EXPRESSION",
+	"AND_EXPRESSION",
+	"EXCLUSIVE_OR_EXPRESSION",
+	"INCLUSIVE_OR_EXPRESSION",
+	"LOGICAL_AND_EXPRESSION",
+	"LOGICAL_OR_EXPRESSION",
+	"CONDITIONAL_EXPRESSION",
+	"CONSTANT",
+	"STRING_LITERAL",
+	"PRIMARY_EXPRESSION",
+	"TYPE_NAME",
+	"DESIGNATOR",
+	"DESIGNATION",
+	"DESIGNATION_INITIALIZER",
+	"INITIALIZER_LIST",
+	"POSTFIX_EXPRESSION",
+	"UNARY_OPERATOR",
+	"UNARY_EXPRESSION",
+	"ASSIGNMENT_EXPRESSION",
+	"DIRECT_ABSTRACT_DECLARATOR",
+	"ABSTRACT_DECLARATOR",
+	"PARAMETER_DECLARATION",
+	"PARAMETER_LIST",
+	"PARAMETER_TYPE_LIST",
+	"STORAGE_CLASS_SPECIFIER",
+	"STRUCT_OR_UNION",
+	"SPECIFIER_QUALIFIER_LIST",
+	"STRUCT_DECLARATOR",
+	"STRUCT_DECLARATOR_LIST",
+	"STRUCT_DECLARATION",
+	"STRUCT_DECLARATION_LIST",
+	"STRUCT_OR_UNION_SPECIFIER",
+	"ENUMERATOR",
+	"ENUMERATOR_LIST",
+	"ENUM_SPECIFIER",
+	"TYPE_SPECIFIER",
+	"TYPE_QUALIFIER",
+	"TYPE_QUALIFIER_LIST",
+	"FUNCTION_SPECIFIER",
+	"DECLARATION_SPECIFIERS",
+	"POINTER",
+	"DIRECT_DECLARATOR",
+	"DECLARATOR",
+	"IDENTIFIER",
+	"IDENTIFIER_LIST",
+	"INITIALIZER",
+	"EXPRESSION",
+	"EXPRESSION_STATEMENT",
+	"INIT_DECLARATOR",
+	"INIT_DECLARATOR_LIST",
+	"DECLARATION",
+	"DECLARATION_LIST",
+	"LABELED_STATEMENT",
+
+	"NT_ANY",
+
 	"NT_ROOT",
 	"NT_UNIT",
-	"NT_ARGSPEC",
-	"NT_ARGSPECLIST",
-	"NT_FUNCDECL",
-	"NT_FUNCDEF",
-	"NT_RETURN",
-	"NT_DECL",
-	"NT_STMT",
-	"NT_BLOCK",
-	"NT_EXPR",
-	"NT_TYPESPEC",
-	"NT_STRUCTSPEC",
-	"NT_UNIONSPEC",
-	"NT_STRUCT_UNION_MEMBER_LIST",
-	"NT_NAME",
-	"NT_NUMBER",
-	"NT_LABEL",
-	"NT_CASE",
-	"NT_DEFAULT",
-	"NT_DECLARATOR",
-	"NT_POINTER_QUALIFIER",
-	"NT_WHILE",
-	"NT_DO",
-	"NT_FOR",
-	"NT_IF",
-	"NT_SWITCH",
-	"NT_GOTO",
-	"NT_BREAK",
-	"NT_CONTINUE",
-	"NT_DECLDEF",
-	"NT_OPERATOR",
-
-
-	"NTX_STORAGE_SPECIFIER",
-	"NTX_STRUCT_UNION_SPECIFIER",
-	"NTX_ENUM_SPECIFIER",
-	"NTX_TYPE_SPECIFIER",
-	"NTX_TYPE_QUAL",
-	"NTX_FUNCTION_SPECIFIER",
-	"NTX_POINTER",
-	"NTX_PARAMETER_LIST",
-	"NTX_IDENTIFIER",
-	"NTX_DIRECT_DECLARATOR",
-	"NTX_PARAMETER_TYPE_LIST",
-	"NTX_IDENTIFIER_LIST",
-	"NTX_DECLARATOR",
-	"NTX_INIT_DECLARATOR",
-	"NTX_DECLARATION",
-	"NTX_INIT_DECLARATOR_LIST",
-	"NTX_DECLARATION_STMT",
-	"NTX_ABSTRACT_DECLARATOR",
-	"NTX_PARAMETER_DECLARATION",
-	"NTX_DIRECT_ABSTRACT_DECLARATOR",
-	"NTX_DECLARATION_SPECIFIER",
-	"NTX_DECLARATION_SPECIFIERS",
-	"NTX_INITIALIZER",
-
 	"NT_DUMMY"
 };
 
 struct node_s *g_root_node=NULL;
-static size_t parse_stmt(struct node_s *parent, struct token_s **tokens);
-static size_t parse_expr(struct node_s *parent, struct token_s **tokens);
-static size_t parse_block(struct node_s *parent, struct token_s **tokens);
-static size_t parse_declarator(struct node_s *parent, struct token_s **tokens);
-static size_t parse_declaration(struct node_s *parent, struct token_s **tokens);
-static size_t parsex_declarator(struct node_s *parent, struct token_s **tokens);
-
-static void log_node(struct node_s *node, const char *fmt, ...)
-{
-	va_list arg;
-	int level=node->level;
-
-	while(level--) (void)putc(' ', stderr);
-
-	fprintf(stderr, "%-25s %3d/%3d %-10s %-10s: ", 
-		node_type_names[node->type], 
-		token_lno(node->token),
-		token_cno(node->token),
-		token_type(node->token), 
-		token_text(node->token));
-	va_start(arg, fmt);
-	(void)vfprintf(stderr, fmt, arg);
-	va_end(arg);
-}
 
 static void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
 	int level=node->level;
 
+	/*fprintf(stderr, "L% 3d", level);*/
+
+	fprintf(stderr, "% 3d/% 2d", token_lno(token), token_cno(token));
+
 	while(level--) (void)putc(' ', stderr);
 
-	//fprintf(stderr, "%-25s %-10s %-10s: ", 
-	fprintf(stderr, "%-25s %3d/%3d %-10s \"%-10s\": ", 
+	fprintf(stderr, "%-25s %-25s [%-10s]: ", 
 		node_type_names[node->type], 
-		token_lno(token),
-		token_cno(token),
-		token_type(token), 
-		token_text(token));
+		token_type(token), token_text(token));
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
 	va_end(arg);
 }
 
+static void log_node(struct node_s *node, const char *fmt, ...)
+{
+	va_list arg;
+	int level=node->level;
+
+	/*fprintf(stderr, "L% 3d", level);*/
+
+	fprintf(stderr, "% 3d/% 2d", token_lno(node->token), token_cno(node->token));
+
+	while(level--) (void)putc(' ', stderr);
+
+	fprintf(stderr, "%-25s %-25s [%-10s]: ", 
+		node_type_names[node->type], 
+		token_type(node->token), token_text(node->token));
+	va_start(arg, fmt);
+	(void)vfprintf(stderr, fmt, arg);
+	va_end(arg);
+}
 
 struct node_s *create_node(struct node_s *parent, int type, struct token_s *token)
 {
@@ -124,13 +130,15 @@ struct node_s *create_node(struct node_s *parent, int type, struct token_s *toke
 
 	node->parent=parent;
 	node->scope_parent=parent->scope_parent;
-	if (parent->type==NT_BLOCK || parent->type==NT_FUNCDEF || parent->type==NT_UNIT)
+	if (parent->type==COMPOUND_STATEMENT || parent->type==TRANSLATION_UNIT)
 		node->scope_parent=parent;
 	node->level=node->parent->level+1;
 	node->type=type;
 	node->token=token;
 
-	log_node_token(node, token, "create_node()\n");
+	log_node_token(node, token, ". create_node() Trying node %s on %s\n",
+		node_type_names[node->type],
+		node_type_names[node->parent->type]);
 
 	return node;
 }
@@ -139,7 +147,8 @@ size_t free_node(struct node_s *node)
 {
 	size_t ix;
 
-	log_node(node, "free_node(): Freeing from %s\n", 
+	log_node(node, "- free_node(): Freeing node %s from %s\n", 
+		node_type_names[node->type],
 		node_type_names[node->parent->type]);
 
 	for (ix=0; ix<node->nsubnodes; ++ix) free(node->subnodes[ix]);
@@ -166,6 +175,7 @@ static size_t error_node(struct node_s *node, const char *fmt, ...)
 	return free_node(node);
 }
 
+#if 0
 static size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
@@ -175,8 +185,7 @@ static size_t error_node_token(struct node_s *node, struct token_s *token, const
 
 	fprintf(stderr, "ERROR (%-25s %-10s %-10s): ", 
 		node_type_names[node->type], 
-		token_type(token), 
-		token_text(token));
+		token_type(token), token_text(token));
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
 	va_end(arg);
@@ -185,18 +194,20 @@ static size_t error_node_token(struct node_s *node, struct token_s *token, const
 
 	return free_node(node);
 }
+#endif
 
+#if 0
 static struct node_s *last_subnode(struct node_s *node)
 {
 	return node->nsubnodes>0 ? node->subnodes[node->nsubnodes-1] : NULL;
 }
+#endif
 
 static int add_node(struct node_s *node)
 {
-	log_node(node, "add_node(): Adding to %s\n"
-			" *** Added %s, current_tree: <<<\n", 
-		node_type_names[node->parent->type],
-		node_type_names[node->type]);
+	log_node(node, "+ add_node(): Adding %s to %s\n", 
+		node_type_names[node->type],
+		node_type_names[node->parent->type]);
 
 	node->parent->subnodes=(struct node_s **)realloc(
 		node->parent->subnodes, ++node->parent->nsubnodes * sizeof node);
@@ -205,6 +216,29 @@ static int add_node(struct node_s *node)
 	return 0;
 }
 
+/*static*/ int add_subnode(struct node_s *node)
+{
+	struct node_s *subnode;
+
+	if (!(subnode=node->nsubnodes>0 ? node->subnodes[0] : NULL)) {
+		fprintf(stderr, "ERROR: No subnode\n");
+	}
+
+	log_node(node, "+ add_subnode(): Adding subnode of %s to %s - freeing current node\n", 
+		node_type_names[node->type],
+		node_type_names[node->parent->type]);
+
+	subnode->parent=node->parent;
+
+	free(node);
+
+	return add_node(subnode);
+
+
+}
+
+
+#if 0
 static int add_typealias(struct node_s *node)
 {
 	const char *text=token_text(node->token);
@@ -218,7 +252,9 @@ static int add_typealias(struct node_s *node)
 
 	return 0;
 }
+#endif
 
+#if 0
 static int istypealias(const struct node_s *node, const struct token_s *token)
 {
 	size_t ix;
@@ -232,6 +268,7 @@ static int istypealias(const struct node_s *node, const struct token_s *token)
 
 	return 0;
 }
+#endif
 
 static void indent(int ind)
 {
@@ -278,6 +315,7 @@ static const char *json_str(const char *str, char *buf, size_t len)
 				switch (str[ix]) {
 				//case '\a':
 				//	buf[bufix++]='a';
+				//	break;
 				case '\b':
 					buf[bufix++]='b';
 					break;
@@ -318,1301 +356,1376 @@ static const char *json_str(const char *str, char *buf, size_t len)
 void print_node_json(struct node_s *node, int ind)
 {
 	size_t ix;
-	static char buf[1024*1024], buf2[1024*1024];
+	static char buf[1024*1024];
 
-	indent(ind); printf("[{\"type\": %s, \"text\": %s}", 
-		json_str(node_type_names[node->type], buf, 1024*1024), 
-		json_str(token_text(node->token), buf2, 1024*1024));
+	indent(ind);
+	fputs("[{\"type\": ", stdout);
+	fputs(json_str(node_type_names[node->type], buf, 1024*1024), stdout);
+	fputs(", \"token\": {\"type\": ", stdout);
+	fputs(json_str(token_type(node->token), buf, 1024*1024), stdout);
+	fputs(", \"text\": ", stdout);
+	fputs(json_str(token_text(node->token), buf, 1024*1024), stdout);
+	fputs(", \"fname\": ", stdout);
+	fputs(json_str(token_fname(node->token), buf, 1024*1024), stdout);
+	printf(", \"fpos\": \"%d,%d\"}}", token_lno(node->token), token_cno(node->token));
 
 	for (ix=0; ix<node->nsubnodes; ++ix) {
-		printf(",\n"); 
+		puts(","); 
 		print_node_json(node->subnodes[ix], ind+1);
 	}
 
 	(void)putchar(']');
 }
 
-static size_t parse_name(struct node_s *parent, struct token_s **tokens)
-{
-	struct node_s *node;
-
-	node=create_node(parent, NT_NAME, tokens[0]);
-
-	if (isname(tokens[0])) return add_node(node), (size_t)1;
-	else return free_node(node);
-}
 
 #if 0
-static size_t parse_number(struct node_s *parent, struct token_s **tokens)
+typedef int (*predicate_t)(const struct token_s *);
+/* Variable arguments should be pairs of type predicate_t and int, terminated by NULL
+   The predicate is the test function. The int indicates if this token identifies the node (non-zero) */
+static size_t generic_parse_tokensequence(struct node_s *parent, struct token_s **tokens,
+	int node_type, ...)
 {
-	struct node_s *node;
+	size_t ix=0;
+	struct node_s *node=create_node(parent, node_type, NULL);
+	predicate_t pred;
+	int id;
+	va_list argp;
 
-	node=create_node(parent, NT_NUMBER);
-	node->token=tokens[0];
+	va_start(argp, node_type);
 
-	if (isnumber(tokens[0])) return add_node(node), (size_t)1;
+	while ((pred=va_arg(argp, predicate_t))) {
+		if (pred(tokens[ix])) {
+			if ((id=va_arg(argp, int))) node->token=tokens[ix];
+			++ix;
+		} else break;
+	}
+
+	va_end(argp);
+
+	if (ix>0) return add_node(node), ix;
 	else return free_node(node);
 }
 #endif
 
-static size_t parse_struct_union_member_list(struct node_s *parent, struct token_s **tokens)
+/* New approach <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/* Helper parsers: */
+
+static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
+	size_t (*pf)(struct node_s *, struct token_s **),
+	int tt_separator)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	node=create_node(parent, NT_STRUCT_UNION_MEMBER_LIST, tokens[ix]);
+	fprintf(stderr, "separated() - 1\n");
 
-	if (tokens[ix]->type==TT_LEFT_CURLY) {
+	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	fprintf(stderr, "separated() - 2 - ix=%d\n", (int)ix);
+	while (tokens[ix]->type==tt_separator) {
+		fprintf(stderr, "separated() - 2a - ix=%d\n", (int)ix);
 		++ix;
-	} else return free_node(node);
 
-	while ((parsed=parse_declaration(node, tokens+ix))) {
-		ix+=parsed;
+		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[separated()] Unexpexted parse");
+		fprintf(stderr, "separated() - 2b - ix=%d\n", (int)ix);
 	}
 
-	if (tokens[ix]->type==TT_RIGHT_CURLY) {
-		++ix;
-		return add_node(node), ix;
-	} else return error_node(node, "parse_struct_union_member_list(): Missing struct block end"), (size_t)0;
-}
-
-static size_t parse_struct_union_spec(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_STRUCTSPEC, tokens[ix]);
-
-	if (tokens[ix]->type==TT_STRUCT) {
-		++ix;
-	} else if (tokens[ix]->type==TT_UNION) {
-		node->type=NT_UNIONSPEC;
-		++ix;	
-	} else return free_node(node);
-
-	if ((parsed=parse_name(node, tokens+ix))) ix+=parsed;
-
-	if ((parsed=parse_struct_union_member_list(node, tokens+ix))) ix+=parsed;
-
+	fprintf(stderr, "separated() - 3 - ix=%d\n", (int)ix);
 	return add_node(node), ix;
 }
 
-static size_t parse_type_storage_qualifier(struct node_s *parent, struct token_s **tokens)
+static int is_any_of(int what, size_t num_alts, int *alts)
 {
-	size_t parsed, ix=0;
+	size_t i;
 
-	if ((parsed=parse_struct_union_spec(parent, tokens))) return parsed;
-	else if (istype(tokens[ix]) || istypealias(parent, tokens[ix]) || isstorage(tokens[ix]) || isqualifier(tokens[ix])) return (size_t)1;
-	return (size_t)0;
-}
-
-
-static size_t parse_typespec(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_TYPESPEC, tokens[ix]);
-
-	while ((parsed=parse_type_storage_qualifier(node, tokens+ix))) ix+=parsed;
-
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-
-	return ix;
-}
-
-static size_t parse_pointer_qualifier(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node;
-
-	node=create_node(parent, NT_POINTER_QUALIFIER, tokens[ix]);
-
-	if (tokens[ix]->type==TT_STAR_OP) {		/* Pointer ref. operator */
-		return add_node(node), ++ix;
+	for (i=0u; i<num_alts; ++i) {
+		if (what==alts[i]) return 1;
 	}
 
-	return free_node(node);
+	return 0;
 }
 
-static size_t parse_argspec(struct node_s *parent, struct token_s **tokens)
+static size_t separated_any_token(struct node_s *parent, struct token_s **tokens, int nt,
+	size_t (*pf)(struct node_s *, struct token_s **),
+	size_t num_separators, int *tt_separators)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	node=create_node(parent, NT_ARGSPEC, NULL);
-
-	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
+	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	if ((parsed=parse_declarator(node, tokens+ix))) ix+=parsed;
-
-	return add_node(node), ix;
-}
-
-static size_t parse_argspeclist(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_ARGSPECLIST, NULL);
-
-	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-	else return free_node(node);
-
-	while ((parsed=parse_argspec(node, tokens+ix))) {
-		ix+=parsed;
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
-		else break;
-	}
-
-	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-	else return error_node(node, "parse_argspeclist(): TT_RIGHT_PARANTHESIS - after argspec loop\n"), (size_t)0;
-
-	return add_node(node), ix;
-}
-
-static size_t parse_declarator(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_DECLARATOR, tokens[ix]);
-
-	while ((parsed=parse_pointer_qualifier(node, tokens+ix))) {
-		ix+=parsed;
-	}
-
-	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-		++ix;
-		if ((parsed=parse_declarator(node, tokens+ix))) ix+=parsed;
-		else return error_node(node, "parse_declarator() Missing inner declarator"), (size_t)0;
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return error_node(node, "parse_declarator() Expected right paranthesis"), (size_t)0;
-	} else if ((parsed=parse_name(node, tokens+ix))) node->token=tokens[ix], ix+=parsed;
-
-	if (tokens[ix]->type==TT_LEFT_SQUARE) {
-		++ix;
-		if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-		if (tokens[ix]->type!=TT_RIGHT_SQUARE) return free_node(node);
-		++ix;
-	} else if ((parsed=parse_argspeclist(node, tokens+ix))) ix+=parsed;
-
-	return add_node(node), ix;
-}
-
-static size_t parse_declaration(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_DECL, tokens[ix]);
-
-	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	while ((parsed=parse_declarator(node, tokens+ix))) {
-		ix+=parsed;
-
-		/* Bitfield specifier (only relevant for struct members) */
-		if (tokens[ix]->type==TT_COLON_OP) {
-			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return error_node(node, "parse_declaration(): Missing bitfield size"), (size_t)0;
-		}
-
-		/* Initializer (Only relevant for regular declarations) */
-		if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
-			++ix;
-			if ((parsed=parse_name(node, tokens+ix))) ix+=parsed;
-			else return error_node(node, "parse_declaration(): Missing initializer"), (size_t)0;
-		}
-
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
-		else break;
-	}
-
-	if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
-	else return free_node(node);
-}
-
-/* New declaration parsing attempt <<< */
-
-static size_t parsex_identifier(struct node_s *parent, struct token_s **tokens)
-{
-	struct node_s *node=create_node(parent, NTX_IDENTIFIER, tokens[0]);
-
-	if (isname(tokens[0])) return add_node(node), (size_t)1;
-	else return free_node(node);
-}
-
-/* storage-class-specifier:
-    "typedef" || "extern" || "static" || "auto" || "register" 
-*/
-static size_t parsex_storage_class_specifier(struct node_s *parent, struct token_s **tokens)
-{
-	struct node_s *node=create_node(parent, NTX_STORAGE_SPECIFIER, tokens[0]);
-
-	if (isstorage(tokens[0]) || istypedef(tokens[0])) return add_node(node), (size_t)1;
-	else return free_node(node);
-}
-
-static size_t parsex_declaration(struct node_s *parent, struct token_s **tokens);
-static size_t parsex_declaration_stmt(struct node_s *parent, struct token_s **tokens);
-
-/* struct-or-union-specifier:
-    struct-or-union identifier? "{" struct-declaration-list "}"
-    struct-or-union identifier
-   To simplify code, this is parsed as:
-    struct-or-union identifier? ("{" struct-declaration-list "}")?
-*/
-static size_t parsex_struct_or_union_specifier(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_STRUCT_UNION_SPECIFIER, tokens[ix]);
-
-	// struct/union
-	if (tokens[ix]->type==TT_STRUCT || tokens[ix]->type==TT_UNION) ++ix;
-	else return free_node(node);
-
-	// Name
-	if ((parsed=parsex_identifier(node, tokens+ix))) ix+=parsed;
-
-	// Members
-	if (tokens[ix]->type==TT_LEFT_CURLY) {
+	while (is_any_of(tokens[ix]->type, num_separators, tt_separators)) {
 		++ix;
 
-		// struct members
-		while ((parsed=parsex_declaration_stmt(node, tokens+ix))) ix+=parsed;
-
-		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
-		else error_node(node, "Expecting right curly brace\n");
+		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[separated_any_token()] Unexpexted parse");
 	}
 
 	return add_node(node), ix;
 }
 
-/* enum-specifier:
-    "enum" identifier? "{" enumerator-list ","? "}"
-    "enum" identifier
-   To simplify code, this is parsed as:
-    "enum" identifier? ("{" enumerator-list ","? "}")?
-*/
-static size_t parsex_enum_specifier(struct node_s *parent, struct token_s **tokens)
+static size_t many(struct node_s *parent, struct token_s **tokens, int nt,
+	size_t (*pf)(struct node_s *, struct token_s **))
 {
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_ENUM_SPECIFIER, tokens[0]);
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	// enum
-	if (tokens[ix]->type==TT_ENUM) ++ix;
+	while ((parsed=pf(node, tokens+ix))) ix+=parsed;
+
+	if (ix>0u) return add_node(node), ix;
+	else return free_node(node);
+}
+
+static size_t any_of_2(struct node_s *parent, struct token_s **tokens, int nt,
+	size_t (*pf1)(struct node_s *, struct token_s **),
+	size_t (*pf2)(struct node_s *, struct token_s **))
+{
+	size_t parsed;
+	struct node_s *node=create_node(parent, nt, tokens[0]);
+
+	if ((parsed=pf1(node, tokens)) || (parsed=pf2(node, tokens))) return add_node(node), parsed;
+	else return free_node(node);
+}
+
+static size_t postfix_token(struct node_s *parent, struct token_s **tokens, int nt,
+	size_t (*pf)(struct node_s *, struct token_s **), int tt)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, nt, tokens[0]);
+
+	fprintf(stderr, "postfix_token() - 1\n");
+
+	if ((parsed=pf(node, tokens))) ix+=parsed;
 	else return free_node(node);
 
-	// name
-	if ((parsed=parsex_identifier(node, tokens+ix))) ix+=parsed;
+	fprintf(stderr, "postfix_token() - 2 - ix=%d\n", (int)ix);
+	if (tokens[ix]->type==tt) ++ix;
+	else return free_node(node);
 
-	// Members
-	if (tokens[ix]->type==TT_LEFT_CURLY) {
-		++ix;
-/* TODO: For now just parse as struct member list, fix this! */
-		// struct members
-		while ((parsed=parsex_declaration(node, tokens+ix))) ix+=parsed;
-
-		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
-		else error_node(node, "Expecting right curly brace\n");
-	}
-
+	fprintf(stderr, "postfix_token() - 3\n");
 	return add_node(node), ix;
 }
 
-/* type-specifier:
-    "void" || "char" || "short" || "int" || "long" || "float" || "double" ||
-    "signed" || "unsigned" || "_Bool" || "_Complex" ||
-    struct-or-union-specifier ||
-    enum-specifier ||
-    typedef-name
-*/
-static size_t parsex_type_specifier(struct node_s *parent, struct token_s **tokens)
+static size_t single_token(struct node_s *parent, struct token_s **tokens, int nt, int tt)
 {
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_TYPE_SPECIFIER, tokens[0]);
+	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	if (istype(tokens[0])) ++ix;
-	else if ((parsed=parsex_struct_or_union_specifier(node, tokens+ix))) ix+=parsed;
-	else if ((parsed=parsex_enum_specifier(node, tokens+ix))) ix+=parsed;
-	else if (istypealias(parent, tokens[0])) ++ix;
-	else return free_node(node);
-
-	return add_node(node), ix;
+	return tokens[0]->type==tt ? add_node(node),1u : free_node(node);
 }
 
-/* type-qualifier:
-    "const" || "restrict" || "volatile"
-*/
-static size_t parsex_type_qualifier(struct node_s *parent, struct token_s **tokens)
+static size_t single_token_any_of(struct node_s *parent, struct token_s **tokens, int nt, size_t ntts, int *tts)
 {
-	struct node_s *node=create_node(parent, NTX_TYPE_QUAL, tokens[0]);
+	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	if (isqualifier(tokens[0])) return add_node(node), (size_t)1;
+	if (is_any_of(tokens[0]->type, ntts, tts)) return add_node(node), 1u;
 	else return free_node(node);
-}
-
-/* function-specifier:
-    "inline"
-*/
-static size_t parsex_function_specifier(struct node_s *parent, struct token_s **tokens)
-{
-	struct node_s *node=create_node(parent, NTX_FUNCTION_SPECIFIER, tokens[0]);
-
-	if (isfuncspec(tokens[0])) return add_node(node), (size_t)1;
-	else return free_node(node);
-}
-
-static size_t parsex_pointer(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_POINTER, NULL);
-
-	while (tokens[ix]->type==TT_STAR_OP) {
-		++ix;
-		while ((parsed=parsex_type_qualifier(node, tokens+ix))) ix+=parsed;
-	}
-	
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-}
-
-static size_t generic_parse_list(struct node_s *parent, struct token_s **tokens,
-	int node_type,
-	size_t (*parsefunc)(struct node_s *, struct token_s **)) 
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, node_type, NULL);
-
-	while ((parsed=parsefunc(node, tokens+ix))) {
-		ix+=parsed;
-	}
-
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-}
-
-static size_t generic_parse_separated_list(struct node_s *parent, struct token_s **tokens,
-	int node_type,
-	size_t (*parsefunc)(struct node_s *, struct token_s **),
-	int separator_tt) 
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, node_type, NULL);
-
-	while ((parsed=parsefunc(node, tokens+ix))) {
-		ix+=parsed;
-
-		if (tokens[ix]->type==separator_tt) ++ix;
-		else break;
-	}
-
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-}
-
-/*static size_t parsex_function_specifier(struct node_s *parent, struct token_s **tokens)
-{
-	struct node_s *node=create_node(parent, NTX_FUNCTION_SPECIFIER, NULL);
-
-	if (isfuncspec(tokens[0])) return add_node(node), (size_t)1;
-	else return free_node(node);
-}*/
-
-static size_t parsex_declaration_specifier(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_DECLARATION_SPECIFIER, tokens[ix]);
-
-	if (isstorage(tokens[ix]) ||
-		istype(tokens[ix]) ||
-		isqualifier(tokens[ix])) return add_node(node), ++ix;
-	else if ((parsed=parsex_function_specifier(node, tokens+ix))) {
-		ix+=parsed;
-		return add_node(node), ix;
-	} else return free_node(node);
-}
-
-static size_t parsex_abstract_declarator(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node=create_node(parent, NTX_ABSTRACT_DECLARATOR, NULL);
-
-	while (tokens[ix]->type==TT_STAR_OP) {
-		++ix;
-	}
-
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-}
-
-static size_t parsex_parameter_declaration(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_PARAMETER_DECLARATION, NULL);
-
-	if ((parsed=generic_parse_list(node, tokens+ix, 
-		NTX_DECLARATION_SPECIFIERS,
-		parsex_declaration_specifier))) {
-		ix+=parsed;
-
-		if ((parsed=parsex_declarator(node, tokens+ix))) ix+=parsed;
-		else if ((parsed=parsex_abstract_declarator(node, tokens+ix))) ix+=parsed;
-
-		return add_node(node), ix;
-	} else return free_node(node);
 }
 
 #if 0
-static size_t parsex_direct_abstract_declarator(struct node_s *parent, struct token_s **tokens)
+static size_t prepostfix_tokens(struct node_s *parent, struct token_s **tokens, int nt,
+	size_t (*pf)(struct node_s *, struct token_s **), int pre_tt, int post_tt)
 {
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_DIRECT_ABSTRACT_DECLARATOR, NULL);
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, nt, tokens[ix]);
 
-	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-		++ix;
+	if (tokens[ix]->type==pre_tt) ++ix;
+	else return free_node(node);
 
-		if ((parsed=parsex_abstract_declarator(node, tokens+ix))) ix+=parsed;
-		else return error_node(node, "Expected declarator\n");
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return error_node(node, "Expected right paranthesis\n");
-	}
+	if ((parsed=pf(node, tokens))) ix+=parsed;
+	else return free_node(node);
 
-	if (tokens[ix]->type==TT_LEFT_SQUARE) {
-		++ix;
-	
-		if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
-		else return error_node(node, "Expected right square bracket\n");
-	} else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-		++ix;
-
-		if ((parsed=generic_parse_separated_list(node, 
-			tokens+ix, 
-			NTX_PARAMETER_TYPE_LIST,
-			parsex_parameter_declaration, 
-			TT_COMMA_OP))) ix+=parsed;
-
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return error_node(node, "Expected right paranthesis\n");
-	}
+	if (tokens[ix]->type==post_tt) ++ix;
+	else return free_node(node);
 
 	return add_node(node), ix;
 }
 #endif
 
-static size_t parsex_parameter_list(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_PARAMETER_LIST, NULL);
 
-	while ((parsed=parsex_parameter_declaration(node, tokens+ix))) {
-		ix+=parsed;
+/* Expression parser: */
 
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
-		else break;
-	}
-
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-}
-
-static size_t parsex_direct_declarator(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_DIRECT_DECLARATOR, NULL);
-
-	if ((parsed=parse_name(node, tokens+ix))) {
-		ix+=parsed;
-
-		/* Bitfields - Even if only available for structs, we allow it
-		   for all declarators (for simplicity) */
-		if (tokens[ix]->type==TT_COLON_OP) {
-			++ix;
-
-			if ((parsed=parse_expr(node, tokens+ix))) {
-				ix+=parsed;
-				return add_node(node), ix;
-			} else return error_node(node, "Expected bitfield specifier\n");
-		}
-	} else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-		++ix;
-
-		if ((parsed=parsex_declarator(node, tokens+ix))) ix+=parsed;
-		else return error_node(node, "Expected declarator\n");
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return error_node(node, "Expected right paranthesis\n");
-	}
-
-	if (tokens[ix]->type==TT_LEFT_SQUARE) {
-		++ix;
-	
-		if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
-		else return error_node(node, "Expected right square bracket\n");
-	} else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-		++ix;
-
-		if ((parsed=generic_parse_separated_list(node, 
-			tokens+ix, 
-			NTX_PARAMETER_TYPE_LIST,
-			parsex_parameter_list, 
-			TT_COMMA_OP))) ix+=parsed;
-		else if ((parsed=generic_parse_separated_list(node, 
-			tokens+ix, 
-			NTX_IDENTIFIER_LIST,
-			parsex_identifier,
-			TT_COMMA_OP))) ix+=parsed;
-
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return error_node(node, "Expected right paranthesis\n");
-	}
-
-	return add_node(node), ix;
-}
-
-static size_t parsex_declarator(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_DECLARATOR, NULL);
-
-	if ((parsed=parsex_pointer(node, tokens+ix))) ix+=parsed;
-
-	if ((parsed=parsex_direct_declarator(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	return add_node(node), ix;
-}
-
-static size_t parsex_initializer(struct node_s *parent, struct token_s **tokens)
-{
-//	size_t ix=0, parsed;
-//*	struct node_s *node=create_node(parent, NTX_INITIALIZER, NULL);
-
-	return 0;	// TODO:
-}
-
-static size_t parsex_init_declarator(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_INIT_DECLARATOR, NULL);
-
-	if ((parsed=parsex_declarator(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	// TODO: ADD bitfield for structs
-
-	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
-		if ((parsed=parsex_initializer(node, tokens+ix))) ++ix;
-		else return error_node(node, "Expected initializert\n"), (size_t)0;
-	}
-
-	return add_node(node), ix;
-}
-
-/* declaration:
-     declaration-specifiers init-declarator-list?
-   declaration-specifiers:
-     (storage-class-specifier type-specifier type-qualifier function-specifier) +
-   init-declarator-list
-     init-declarator ("," init-declarator) *
-*/
-static size_t parsex_declaration(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_DECLARATION, NULL);
-
-	/* declaration-specifiers */
-	while ((parsed=parsex_storage_class_specifier(node, tokens+ix))
-		|| (parsed=parsex_type_specifier(node, tokens+ix))
-		|| (parsed=parsex_type_qualifier(node, tokens+ix))
-		|| (parsed=parsex_function_specifier(node, tokens+ix))) ix+=parsed;
-
-	if (ix==0) return free_node(node);
-
-	/* init-declarator-list */
-	if ((parsed=generic_parse_separated_list(node, 
-		tokens+ix,
-		NTX_INIT_DECLARATOR_LIST,
-		parsex_init_declarator,
-		TT_COMMA_OP))) ix+=parsed;
-/*	else return error_node(node, "Expected init declarator list\n"), (size_t)0;*/
-
-	return add_node(node), ix;
-}
-
-/* parsex_declaration() + ";" */
-static size_t parsex_declaration_stmt(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0, parsed;
-	struct node_s *node=create_node(parent, NTX_DECLARATION_STMT, NULL);
-
-	if ((parsed=parsex_declaration(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
-	else return free_node(node);
-}
-
-/* >>> */
-
-static size_t parse_typedef(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_DECL, tokens[ix]);
-
-	if (istypedef(tokens[ix])) ++ix;
-	else return free_node(node);
-
-	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	while ((parsed=parse_declarator(node, tokens+ix))) {
-		add_typealias(last_subnode(node));
-		ix+=parsed;
-
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
-		else break;
-	}
-
-	if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
-	else return free_node(node);
-}
-
-
-enum {OP_ASSOC_NONE=0, OP_ASSOC_LEFT, OP_ASSOC_RIGHT};
-enum {OP_UNARY, OP_RIGHT_UNARY, OP_BINARY/*, OP_TRINARY*/};
+enum {ASSOC_NONE=0, ASSOC_LEFT, ASSOC_RIGHT};
+enum {ARITY_NONE=0, ARITY_LEFT_UNARY, ARITY_RIGHT_UNARY, ARITY_BINARY, ARITY_TRINARY, ARITY_GROUPING, ARITY_GROUPING_END};
 struct op_s {
-	int op;		/* Operator token type */
-	int prec;	/* Operator precedence (higher number gives higher precedence) */
-	int assoc;	/* Operator associativity */
-	int arity;	/* Operator arity */
+	int tt, sec_tt;		/* sec_tt is token type for second operator in trinary operator */
+	int prec;		/* High number means higher precedence */
+	int assoc;
+	int arity;
+} ops[]={
+	{.tt=TT_PLUSPLUS_OP, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_RIGHT_UNARY},
+	{.tt=TT_MINUSMINUS_OP, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_RIGHT_UNARY},
+	{.tt=TT_LEFT_PARANTHESIS, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_GROUPING},	/* Function call */
+	{.tt=TT_LEFT_SQUARE, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_GROUPING},	/* Array subscripting */
+	{.tt=TT_RIGHT_PARANTHESIS, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_GROUPING_END},	/* Function call */
+	{.tt=TT_RIGHT_SQUARE, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_GROUPING_END},	/* Array subscripting */
+	{.tt=TT_DOT_OP, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_ARROW_OP, .prec=100, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_PLUSPLUS_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_MINUSMINUS_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_PLUS_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_MINUS_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_NEGATION_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_COMPLEMENT_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	/* Type cast (how to handle this) */
+	{.tt=TT_STAR_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_BIT_AND_OP, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+	{.tt=TT_SIZEOF, .prec=95, .assoc=ASSOC_RIGHT, .arity=ARITY_LEFT_UNARY},
+
+	{.tt=TT_STAR_OP, .prec=90, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_SLASH_OP, .prec=90, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_PERCENT_OP, .prec=90, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_PLUS_OP, .prec=85, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_MINUS_OP, .prec=85, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_LEFTSHIFT_OP, .prec=80, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_RIGHTSHIFT_OP, .prec=80, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_LESSTHAN_OP, .prec=75, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_LESSTHAN_EQUAL_OP, .prec=75, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_GREATERTHAN_OP, .prec=75, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_GREATERTHAN_EQUAL_OP, .prec=75, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_EQUAL_OP, .prec=70, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+	{.tt=TT_NOT_EQUAL_OP, .prec=70, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_BIT_AND_OP, .prec=65, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_BIT_XOR_OP, .prec=60, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_BIT_OR_OP, .prec=55, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_AND_OP, .prec=50, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_OR_OP, .prec=45, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
+	{.tt=TT_QUESTION_OP, .sec_tt=TT_COLON_OP, .prec=40, .assoc=ASSOC_RIGHT, .arity=ARITY_TRINARY},
+
+	{.tt=TT_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_PLUS_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_MINUS_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_STAR_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_SLASH_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_PERCENT_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_LEFTSHIFT_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_RIGHTSHIFT_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_BIT_AND_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_BIT_XOR_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+	{.tt=TT_BIT_OR_ASSIGNMENT_OP, .prec=35, .assoc=ASSOC_RIGHT, .arity=ARITY_BINARY},
+
+	{.tt=TT_COMMA_OP, .prec=30, .assoc=ASSOC_LEFT, .arity=ARITY_BINARY},
+
 };
 
-static struct op_s op_table[]={
-	{TT_PLUSPLUS_OP, 98, OP_ASSOC_LEFT, OP_RIGHT_UNARY},
-	{TT_MINUSMINUS_OP, 98, OP_ASSOC_LEFT, OP_RIGHT_UNARY},
-	{TT_LEFT_PARANTHESIS, 98, OP_ASSOC_LEFT, OP_UNARY},
-	{TT_LEFT_SQUARE, 98, OP_ASSOC_LEFT, OP_UNARY},
-	{TT_DOT_OP, 98, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_ARROW_OP, 98, OP_ASSOC_LEFT, OP_BINARY},
-	/* Compound literal */
-	/* typeid() */
-	/* const_cast */
-	/* dynamic_cats */
-	/* reinterpret_cast */
-	/* static_cast */
-
-	{TT_PLUSPLUS_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	{TT_MINUSMINUS_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	{TT_PLUS_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	{TT_MINUS_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	{TT_NEGATION_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	{TT_COMPLEMENT_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	/* Type cast */
-	{TT_STAR_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	{TT_BIT_AND_OP, 96, OP_ASSOC_RIGHT, OP_UNARY},
-	/* sizeof */
-	/* _Alignof */
-	/* new, new[] */
-	/* delete, delete[] */
-
-	/* .* */
-	/* ->* */
-
-	{TT_STAR_OP, 92, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_SLASH_OP, 92, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_PERCENT_OP, 92, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_PLUS_OP, 90, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_MINUS_OP, 90, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_LEFTSHIFT_OP, 88, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_RIGHTSHIFT_OP, 88, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_LESSTHAN_OP, 87, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_LESSTHAN_EQUAL_OP, 87, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_GREATERTHAN_OP, 87, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_GREATERTHAN_EQUAL_OP, 87, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_EQUAL_OP, 86, OP_ASSOC_LEFT, OP_BINARY},
-	{TT_NOT_EQUAL_OP, 86, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_BIT_AND_OP, 84, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_BIT_XOR_OP, 82, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_BIT_OR_OP, 80, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_AND_OP, 78, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_OR_OP, 76, OP_ASSOC_LEFT, OP_BINARY},
-
-	{TT_QUESTION_OP, 74, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_COLON_OP, 74, OP_ASSOC_RIGHT, OP_BINARY},
-
-	{TT_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_PLUS_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_MINUS_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_STAR_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_SLASH_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_PERCENT_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_LEFTSHIFT_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_RIGHTSHIFT_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_BIT_AND_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_BIT_XOR_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-	{TT_BIT_OR_ASSIGNMENT_OP, 72, OP_ASSOC_RIGHT, OP_BINARY},
-
-	/* throw */
-
-	{TT_COMMA_OP, 72, OP_ASSOC_RIGHT, OP_BINARY}
-};
-
-static struct op_s *get_op(struct token_s *token)
+static struct op_s *getop(int tt, int arity)
 {
-	size_t ix;
+	size_t i;
 
-	for (ix=0; ix<sizeof op_table/sizeof(struct op_s); ++ix) {
-		if (op_table[ix].op==token->type) return &op_table[ix];
+	for (i=0; i<sizeof ops/sizeof ops[0]; ++i) {
+		if (tt==ops[i].tt && arity==ops[i].arity) return &ops[i];
 	}
 
 	return NULL;
 }
 
-struct token_arities_s {
-	int type;
-	int left_unary;
-	int right_unary;
-	int binary;
-};
-#if 0
-static struct token_arities_s token_arities[]={
-	{TT_NULL, 0, 0, 0},
-	{TT_END, 0, 0, 0},
-	{TT_ERROR, 0, 0, 0},
-	{TT_WHITESPACE,  0, 0, 0},
-	{TT_PREPROCESSOR,  0, 0, 0},
-	{TT_TEXTUAL, 0, 0, 0},
-	{TT_RETURN, 0, 0, 0},
-	{TT_BREAK, 0, 0, 0},
-	{TT_CONTINUE, 0, 0, 0},
-	{TT_GOTO, 0, 0, 0},
-	{TT_IF, 0, 0, 0},
-	{TT_ELSE, 0, 0, 0},
-	{TT_WHILE, 0, 0, 0},
-	{TT_DO, 0, 0, 0},
-	{TT_FOR, 0, 0, 0},
-	{TT_SWITCH, 0, 0, 0},
-	{TT_CASE, 0, 0, 0},
-	{TT_DEFAULT, 0, 0, 0},
-	{TT_NUMBER,  0, 0, 0},
-	{TT_STRING,  0, 0, 0},
-	{TT_CHARACTER,  0, 0, 0},
-	{TT_OPERATOR, 0, 0, 0},
-	{TT_PLUS_OP, 1, 0, 1},
-	{TT_PLUS_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_PLUSPLUS_OP, 1, 1, 0},
-	{TT_MINUS_OP, 1, 0, 1},
-	{TT_MINUS_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_ARROW_OP, 0, 0, 1},
-	{TT_MINUSMINUS_OP, 1, 1, 0},
-	{TT_STAR_OP, 1, 0, 1},
-	{TT_STAR_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_SLASH_OP, 0, 0, 1},
-	{TT_SLASH_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_PERCENT_OP, 0, 0, 1},
-	{TT_PERCENT_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_EQUAL_OP, 0, 0, 1},
-	{TT_NEGATION_OP, 1, 0, 0},
-	{TT_COMPLEMENT_OP, 1, 0, 0},
-	{TT_COMPLEMENT_ASSIGN_OP, 1, 0, 0},
-	{TT_NOT_EQUAL_OP, 0, 0, 1},
-	{TT_LESSTHAN_OP, 0, 0, 1},
-	{TT_LESSTHAN_EQUAL_OP, 0, 0, 1},
-	{TT_GREATERTHAN_OP, 0, 0, 1},
-	{TT_GREATERTHAN_EQUAL_OP, 0, 0, 1},
-	{TT_LEFTSHIFT_OP, 0, 0, 1},
-	{TT_LEFTSHIFT_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_RIGHTSHIFT_OP, 0, 0, 1},
-	{TT_RIGHTSHIFT_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_SEMICOLON_OP, 0, 0, 0},
-	{TT_COMMA_OP, 0, 0, 1},
-	{TT_DOT_OP, 0, 0, 1},
-	{TT_AND_OP, 0, 0, 1},
-	{TT_BIT_AND_OP, 1, 0, 1},
-	{TT_BIT_AND_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_BIT_XOR_OP, 0, 0, 1},
-	{TT_BIT_XOR_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_BIT_OR_OP, 0, 0, 1},
-	{TT_BIT_OR_ASSIGNMENT_OP, 0, 0, 1},
-	{TT_OR_OP, 0, 0, 1},
-	{TT_LEFT_PARANTHESIS, 0, 0, 0},
-	{TT_RIGHT_PARANTHESIS, 0, 0, 0},
-	{TT_LEFT_SQUARE, 0, 0, 0},
-	{TT_RIGHT_SQUARE, 0, 0, 0},
-	{TT_LEFT_CURLY, 0, 0, 0},
-	{TT_RIGHT_CURLY, 0, 0, 0},
-	{TT_QUESTION_OP, 0, 1, 0},
-	{TT_COLON_OP, 0, 0, 1},
-	{TT_STRUCT, 0, 0, 0},
-	{TT_UNION, 0, 0, 0},
-};
-#endif
-#if 0
-static int get_arity(size_t /*@unused@*/ix, struct token_s /*@unused@*/**tokens)
+/*static*/ size_t Xexpression(struct node_s *parent, struct token_s **tokens)
 {
-	return 0;
-}
-#endif
+	size_t /*parsed, */ix=0u;
+	struct node_s *node=create_node(parent, EXPRESSION, tokens[0]);
+	int done=0;
+	struct op_s start_op={.tt=0, .prec=1000, .assoc=ASSOC_NONE, .arity=ARITY_GROUPING};
+	struct op_s value={.tt=0, .prec=1000, .assoc=ASSOC_NONE, .arity=ARITY_GROUPING_END};
+	struct op_s *op, *prev_op=&start_op;
+	int arity;
 
-static size_t parse_expr(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node;
-	struct op_s *op;
-	struct token_s *tmpop_token;
-	STACK *op_stack, *match_stack, *rpn_stack;
+	while (!done) {
+		if (prev_op->arity==ARITY_BINARY || prev_op->arity==ARITY_GROUPING)
+			arity=ARITY_LEFT_UNARY;
+		else arity=ARITY_BINARY;
+		
+		if((op=getop(tokens[ix]->type, arity))) {	/* Operator found */
 
-	op_stack=stackalloc(32);		/* Operator stack */
-	match_stack=stackalloc(32);		/* Stack tokens needing a matching token */
-	rpn_stack=stackalloc(1024);		/* Parsed RPN stream */
-
-	node=create_node(parent, NT_EXPR, tokens[ix]);
-
-	while (tokens[ix]->type!=TT_NULL) {
-		log_node_token(node, tokens[ix], ">>>\n");
-		if (isleft(tokens[ix])) {
-			log_node_token(node, tokens[ix], ">>> left\n");
-			stackpush(op_stack, tokens[ix]);
-			stackpush(match_stack, tokens[ix]);
-		} else if (isright(tokens[ix])) {
-			log_node_token(node, tokens[ix], ">>> right\n");
-			if (stacksize(match_stack)>0 
-				&& ismatchingright(stacktop(match_stack), tokens[ix])) {
-
-				stackpop(match_stack);
-			} else break;
-
-			while (stacksize(op_stack)>0 
-				&& !ismatchingright(tokens[ix], stacktop(op_stack))) {
-				log_node_token(node, tokens[ix], ">>> s\n");
-				if (isleft(stacktop(op_stack))) {
-					return error_node_token(node, tokens[ix], "Unmatched\n"), (size_t)0;
-				}
-				stackpush(rpn_stack, stackpop(op_stack));
-			}
-			if (stacksize(op_stack)<1 || !ismatchingright(tokens[ix], stacktop(op_stack)))
-				break;
-
-		} else if (isop(tokens[ix])) {
-			if (tokens[ix]->type==TT_QUESTION_OP) stackpush(match_stack, tokens[ix]);
-			else if (tokens[ix]->type==TT_COLON_OP) {
-				if (stacksize(match_stack)>0 
-					&& ismatchingright(stacktop(match_stack), tokens[ix])) {
-
-					stackpop(match_stack);
-				} else {
-					if (stacksize(match_stack)==0) break;
-					else return error_node_token(node, tokens[ix], "parse_expr(): Unexpected token\n"), (size_t)0;
-				}
-			}
-
-			op=get_op(tokens[ix]);
-
-			if (op->assoc==OP_ASSOC_RIGHT) {
-				log_node_token(node, tokens[ix], ">>> right-assoc\n");
-				while (stacksize(op_stack)>0 
-					&& op->prec<get_op((tmpop_token=stackpop(op_stack)))->prec) {
-					stackpush(rpn_stack, tmpop_token);
-				}
-			} else {
-				log_node_token(node, tokens[ix], ">>> left-assoc\n");
-				while (stacksize(op_stack)>0 
-					&& op->prec<=get_op((tmpop_token=stackpop(op_stack)))->prec) {
-					stackpush(rpn_stack, tmpop_token);
-				}
-			}
-
-			stackpush(op_stack, tokens[ix]);
-		} else if (isvalue(tokens[ix]) || isname(tokens[ix])) {
-			stackpush(rpn_stack, tokens[ix]);
-		} else {
-			break;
+		} else {					/* No operator found */
+			op=&value;
 		}
+		/* TODO: Handle right unary */
 
-		++ix;
+		prev_op=op;
 	}
 
-	while (stacksize(op_stack)>0) {
-		stackpush(rpn_stack, stackpop(op_stack));
-	}
-
-	stackfree(rpn_stack);
-	stackfree(match_stack);
-	stackfree(op_stack);
-
-	return ix;
+	return free_node(node);
 }
 
-static size_t parse_return(struct node_s *parent, struct token_s **tokens)
+/* Actual parsers: */
+
+static size_t identifier(struct node_s *parent, struct token_s **tokens);
+static size_t type_specifier(struct node_s *parent, struct token_s **tokens);
+static size_t expression(struct node_s *parent, struct token_s **tokens);
+static size_t statement(struct node_s *parent, struct token_s **tokens);
+static size_t compound_statement(struct node_s *parent, struct token_s **tokens);
+static size_t declarator(struct node_s *parent, struct token_s **tokens);
+static size_t declaration_specifiers(struct node_s *parent, struct token_s **tokens);
+static size_t pointer(struct node_s *parent, struct token_s **tokens);
+static size_t constant_expression(struct node_s *parent, struct token_s **tokens);
+static size_t initializer(struct node_s *parent, struct token_s **tokens);
+static size_t cast_expression(struct node_s *parent, struct token_s **tokens);
+static size_t unary_expression(struct node_s *parent, struct token_s **tokens);
+static size_t specifier_qualifier_list(struct node_s *parent, struct token_s **tokens);
+static size_t abstract_declarator(struct node_s *parent, struct token_s **tokens);
+static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens);
+static size_t type_qualifier(struct node_s *parent, struct token_s **tokens);
+
+
+static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	int seps[]={TT_PLUS_OP, TT_MINUS_OP};
 
-	node=create_node(parent, NT_RETURN, tokens[ix]);
+	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, cast_expression, 
+		sizeof seps/sizeof seps[0], seps);
+}
 
-	if (tokens[ix]->type==TT_RETURN) {
+static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
+{
+	int seps[]={TT_PLUS_OP, TT_MINUS_OP};
+
+	return separated_any_token(parent, tokens, ADDITIVE_EXPRESSION, multiplicative_expression, 
+		sizeof seps/sizeof seps[0], seps);
+}
+
+static size_t shift_expression(struct node_s *parent, struct token_s **tokens)
+{
+	int seps[]={TT_LEFTSHIFT_OP, TT_RIGHTSHIFT_OP};
+
+	return separated_any_token(parent, tokens, SHIFT_EXPRESSION, additive_expression, 
+		sizeof seps/sizeof seps[0], seps);
+}
+
+static size_t relational_expression(struct node_s *parent, struct token_s **tokens)
+{
+	int seps[]={TT_LESSTHAN_OP, TT_GREATERTHAN_OP, TT_LESSTHAN_EQUAL_OP, TT_GREATERTHAN_EQUAL_OP};
+
+	return separated_any_token(parent, tokens, RELATIONAL_EXPRESSION, shift_expression, 
+		sizeof seps/sizeof seps[0], seps);
+}
+
+static size_t equality_expression(struct node_s *parent, struct token_s **tokens)
+{
+	int seps[]={TT_EQUAL_OP, TT_NOT_EQUAL_OP};
+
+	return separated_any_token(parent, tokens, EQUALITY_EXPRESSION, relational_expression, 
+		sizeof seps/sizeof seps[0], seps);
+}
+
+static size_t and_expression(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, AND_EXPRESSION, equality_expression, TT_BIT_AND_OP);
+}
+
+static size_t exclusive_or_expression(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, EXCLUSIVE_OR_EXPRESSION, and_expression, TT_BIT_XOR_OP);
+}
+
+static size_t inclusive_or_expression(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, INCLUSIVE_OR_EXPRESSION, exclusive_or_expression, TT_BIT_OR_OP);
+}
+
+static size_t logical_and_expression(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, LOGICAL_AND_EXPRESSION, inclusive_or_expression, TT_AND_OP);
+}
+
+static size_t logical_or_expression(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, LOGICAL_OR_EXPRESSION, logical_and_expression, TT_OR_OP);
+}
+
+static size_t conditional_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, CONDITIONAL_EXPRESSION, tokens[0]);
+
+	if ((parsed=logical_or_expression(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_QUESTION_OP) {
 		++ix;
-		if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[conditional_expression()] Expected expression");
+
+		if (tokens[ix]->type==TT_COLON_OP) ++ix;
+		else error_node(node, "[conditional_expression()] Expected colon");
+
+		if ((parsed=conditional_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[conditional_expression()] Expected conditional-expression");
+	}
+
+	return add_node(node), ix;
+}
+
+static size_t constant(struct node_s *parent, struct token_s **tokens)
+{
+	int tts[]={TT_CHARACTER, TT_NUMBER};
+
+	return single_token_any_of(parent, tokens, CONSTANT, sizeof tts/sizeof tts[0], tts);
+}
+
+static size_t string_literal(struct node_s *parent, struct token_s **tokens)
+{
+	return single_token(parent, tokens, STRING_LITERAL, TT_STRING);
+}
+
+static size_t primary_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, PRIMARY_EXPRESSION, tokens[0]);
+
+	if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
+	else if ((parsed=constant(node, tokens+ix))) ix+=parsed;
+	else if ((parsed=string_literal(node, tokens+ix))) ix+=parsed;
+	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+		++ix;
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
 		else return free_node(node);
-		if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 		else return free_node(node);
-	} else return free_node(node);
-}
-
-static size_t parse_while(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_WHILE, tokens[ix]);
-
-	if (tokens[ix]->type==TT_WHILE) {
-		++ix;
-		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return free_node(node);
-			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node);
-			++ix;
-			if ((parsed=parse_stmt(node, tokens+ix))) return add_node(node), ix+=parsed;
-			else if ((parsed=parse_block(node, tokens+ix))) return add_node(node), ix+=parsed;
-			else return free_node(node);
-		} else return free_node(node);
-	} else return free_node(node);
-}
-
-static size_t parse_do(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_DO, tokens[ix]);
-
-	if (tokens[ix]->type==TT_DO) {
-		++ix;
-		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-			++ix;
-			if ((parsed=parse_stmt(node, tokens+ix))) ix+=parsed;
-			if (tokens[ix]->type==TT_WHILE) {
-				if ((parsed=parse_expr(node, tokens+ix))) add_node(node), ix+=parsed;
-				else return free_node(node);
-			} else free_node(node);
-		} else return free_node(node);
-	} else return free_node(node);
-
-	return free_node(node);
-}
-
-static size_t parse_for(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_FOR, tokens[ix]);
-	node->token=tokens[ix];
-
-	if (tokens[ix]->type==TT_FOR) {
-		++ix;
-		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return free_node(node);
-			if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
-			else return free_node(node);
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return free_node(node);
-			if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
-			else return free_node(node);
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return free_node(node);
-
-			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node);
-			if ((parsed=parse_stmt(node, tokens+ix))) return add_node(node), ix+=parsed;
-			else return free_node(node);
-		} else return free_node(node);
-	} else return free_node(node);
-}
-
-static size_t parse_if(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_IF, tokens[ix]);
-
-	if (tokens[ix]->type==TT_IF) {
-		++ix;
-		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return free_node(node);
-			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node);
-			if ((parsed=parse_stmt(node, tokens+ix))) return add_node(node), ix+=parsed;
-			else return free_node(node);
-		} else return free_node(node);
-	} else return free_node(node);
-}
-
-
-static size_t parse_switch(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_SWITCH, tokens[ix]);
-
-	if (tokens[ix]->type==TT_SWITCH) {
-		++ix;
-		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-			++ix;
-			if ((parsed=parse_expr(node, tokens+ix))) ix+=parsed;
-			else return error_node(node, "parse_switch(): No condition\n"), (size_t)0;
-			if (!(tokens[ix]->type==TT_RIGHT_PARANTHESIS)) return free_node(node);
-			++ix;
-			if ((parsed=parse_block(node, tokens+ix))) return add_node(node), ix+=parsed;
-			else return error_node(node, "parse_switch(): No switch block\n"), (size_t)0;
-		} else return free_node(node);
-	} else return free_node(node);
-}
-
-static size_t parse_goto(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node;
-
-	node=create_node(parent, NT_GOTO, tokens[ix]);
-
-	if (tokens[ix]->type==TT_GOTO) {
-		++ix;
-		if (!isname(tokens[ix])) 
-			return error_node(node, "parse_goto(): No label specified\n"), (size_t)0;
-		node->token=tokens[ix++];
-		if (tokens[ix]->type!=TT_SEMICOLON_OP)
-			return error_node(node, "parse_goto(): No terminating semicolon\n"), (size_t)0;
-		return add_node(node), ++ix;
-	} else return free_node(node);
-}
-
-static size_t parse_break(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node;
-
-	node=create_node(parent, NT_BREAK, tokens[ix]);
-
-	if (tokens[ix]->type==TT_BREAK) {
-		++ix;
-		if (tokens[ix]->type!=TT_SEMICOLON_OP)
-			return error_node(node, "parse_break(): No terminating semicolon\n"), (size_t)0;
-		return add_node(node), ++ix;
-	} else return free_node(node);
-}
-
-static size_t parse_continue(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	struct node_s *node;
-
-	node=create_node(parent, NT_CONTINUE, tokens[ix]);
-
-	if (tokens[ix]->type==TT_CONTINUE) {
-		++ix;
-		if (tokens[ix]->type!=TT_SEMICOLON_OP)
-			return error_node(node, "parse_continue(): No terminating semicolon\n"), (size_t)0;
-		return add_node(node), ++ix;
-	} else return free_node(node);
-}
-
-static size_t parse_stmt(struct node_s *parent, struct token_s **tokens)
-{
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_STMT, tokens[0]);
-
-	if ((parsed=parse_return(node, tokens))
-		|| (parsed=parsex_declaration_stmt(node, tokens))
-		|| (parsed=parse_typedef(node, tokens))
-		|| (parsed=parse_while(node, tokens))
-		|| (parsed=parse_do(node, tokens))
-		|| (parsed=parse_for(node, tokens))
-		|| (parsed=parse_if(node, tokens))
-		|| (parsed=parse_switch(node, tokens))
-		|| (parsed=parse_goto(node, tokens))
-		|| (parsed=parse_break(node, tokens))
-		|| (parsed=parse_continue(node, tokens))
-		|| ((parsed=parse_expr(node, tokens)) && tokens[parsed]->type==TT_SEMICOLON_OP && ++parsed)) {
-
-		return add_node(node), parsed;
-	} else return free_node(node);
-}
-
-static size_t parse_label(struct node_s *parent, struct token_s **tokens)
-{
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
-
-	node=create_node(parent, NT_LABEL, tokens[ix]);
-
-	if ((parsed=parse_name(node, tokens))) {
-		ix+=parsed;
-		if (tokens[ix]->type==TT_COLON_OP) return add_node(node), ++ix;
 	}
 
-	return free_node(node);
+	return add_node(node), ix;
 }
 
-static size_t parse_case(struct node_s *parent, struct token_s **tokens)
+static size_t type_name(struct node_s *parent, struct token_s **tokens)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, TYPE_NAME, tokens[0]);
 
-	node=create_node(parent, NT_CASE, tokens[ix]);
+	if ((parsed=specifier_qualifier_list(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
 
-	if (tokens[ix]->type==TT_CASE) {
-		++ix;
-		if (!(parsed=parse_expr(node, tokens+ix))) 
-			return error_node(node, "parse_case(): No case expression\n"), (size_t)0;
-		ix+=parsed;
-		if (tokens[ix]->type==TT_COLON_OP) return add_node(node), ++ix;
-		else error_node(node, "parse_case(): No terminating colon\n");
-	} else return free_node(node);
+	if ((parsed=abstract_declarator(node, tokens+ix))) ix+=parsed;
 
-	return free_node(node);
+	return add_node(node), ix;
 }
 
-static size_t parse_default(struct node_s *parent, struct token_s **tokens)
+static size_t designator(struct node_s *parent, struct token_s **tokens)
 {
-	size_t ix=0;
-	struct node_s *node;
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DESIGNATOR, tokens[0]);
 
-	node=create_node(parent, NT_DEFAULT, tokens[ix]);
-
-	if (tokens[ix]->type==TT_DEFAULT) {
+	if (tokens[ix]->type==TT_LEFT_SQUARE) {
 		++ix;
-		if (tokens[ix]->type==TT_COLON_OP) return add_node(node), ++ix;
-		else error_node(node, "parse_default(): No terminating colon\n");
+
+		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
+
+		if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
+		else return free_node(node);
+	} else if (tokens[ix]->type==TT_DOT_OP) {
+		++ix;
+
+		if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
 	} else return free_node(node);
 
-	return free_node(node);
+	return add_node(node), ix;
 }
 
-static size_t parse_block(struct node_s *parent, struct token_s **tokens)
+static size_t designation(struct node_s *parent, struct token_s **tokens)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DESIGNATION, tokens[0]);
 
-	node=create_node(parent, NT_BLOCK, tokens[ix]);
+	if ((parsed=designator(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
 
-	if (tokens[ix]->type==TT_LEFT_CURLY) {
-		log_node(node, "TT_LEFT_CURLY\n");
-		++ix;
-
-		log_node(node, "Left curly ok\n");
-
-		while((parsed=parse_stmt(node, tokens+ix))
-			|| (parsed=parse_block(node, tokens+ix))
-			|| (parsed=parse_case(node, tokens+ix))
-			|| (parsed=parse_default(node, tokens+ix))
-			|| (parsed=parse_label(node, tokens+ix))) ix+=parsed;
-
-	} else return free_node(node);
-
-	if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
+	if (tokens[ix]->type==TT_ASSIGNMENT_OP) ++ix;
 	else return free_node(node);
 
 	return add_node(node), ix;
 }
 
-static size_t parse_funcdef(struct node_s *parent, struct token_s **tokens)
+static size_t designation_initializer(struct node_s *parent, struct token_s **tokens)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DESIGNATION_INITIALIZER, tokens[0]);
 
-	node=create_node(parent, NT_FUNCDEF, NULL);
+	if ((parsed=designation(node, tokens+ix))) ix+=parsed;
 
-	if ((parsed=parse_typespec(node, tokens+ix))) ix+=parsed;
-
-	/* Argument list is ihncluded in parse_declarator */
-	if ((parsed=parse_declarator(node, tokens+ix))) ix+=parsed;
+	if ((parsed=initializer(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	/* Old-style c argument type declarations */
-	while ((parsed=parse_declarator(node, tokens+ix))) ix+=parsed;
-
-	if ((parsed=parse_block(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	(void)add_node(node);
-	
-	return ix;
+	return add_node(node), ix;
 }
 
-/* translation-unit:
-     external-declaration +
-   external-declaration:
-     function-definition     - parse_funcdef()
-     declaration             - parsex_declaration_stmt() || parse_typedef()
-
-   TODO: Rename parsex_... to parse when done
-   TODO: Consider if parse_typedef() whould be consumed into parsex_declaration()
-*/
-size_t parse(struct node_s *parent, struct token_s **tokens)
+static size_t initializer_list(struct node_s *parent, struct token_s **tokens)
 {
-	size_t ix=0;
-	size_t parsed;
-	struct node_s *node;
+	return separated(parent, tokens, INITIALIZER_LIST, designation_initializer, TT_COMMA_OP);
+}
 
-	node=create_node(parent, NT_UNIT, NULL);
+static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, POSTFIX_EXPRESSION, tokens[0]);
 
-	g_root_node=node;	// TODO: Just for logging
+	if ((parsed=primary_expression(node, tokens+ix))) ix+=parsed;
+	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+		++ix;
 
-	while (tokens[ix]->type!=TT_END) {
-		log_node(node, "parse() - Start of loop\n");
-		if ((parsed=parse_funcdef(node, tokens+ix))
-			|| (parsed=parsex_declaration_stmt(node, tokens+ix))
-			|| (parsed=parse_typedef(node, tokens+ix))) ix+=parsed;
-		log_node(node, "parse() - End of loop\n");
+		if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else return free_node(node);
+
+		if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
+		else error_node(node, "[postfix_expression()] Expected opening curly bracket");
+
+		if ((parsed=initializer_list(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[postfix_expression()] Expected initializer-list");
+
+		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
+
+		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
+		else error_node(node, "[postfix_expression()] Expected closing curly bracket");
+	} else {
+		/* TODO: Handle left-recursive grammar */
+		return free_node(node);
 	}
 
-	(void)add_node(node);
-
-	return ix;
+	return add_node(node), ix;
 }
 
+static size_t unary_operator(struct node_s *parent, struct token_s **tokens)
+{
+	int tts[]={};
+	struct node_s *node=create_node(parent, UNARY_OPERATOR, tokens[0]);
+
+	if (is_any_of(tokens[0]->type, sizeof tts/sizeof tts[0], tts)) return add_node(node), 1u;
+	else return free_node(node);
+}
+
+static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+
+	if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
+	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+		++ix;
+
+		if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else return free_node(node);
+	} else return free_node(node);
+
+	return add_node(node), ix;
+}
+
+static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, UNARY_EXPRESSION, tokens[0]);
+
+	if ((parsed=postfix_expression(node, tokens+ix))) ix+=parsed;
+	else if (tokens[ix]->type==TT_PLUSPLUS_OP || tokens[ix]->type==TT_MINUSMINUS_OP) {
+		++ix;
+		
+		if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[unary_expression()] Expected unary-expression");
+	} else if ((parsed=unary_operator(node, tokens+ix))) {
+		ix+=parsed;
+
+		if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[unary_expression()] Expected cast-expression");
+	} else if(tokens[ix]->type==TT_SIZEOF) {
+		++ix;
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+			++ix;
+
+			if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
+			else error_node(node, "[unary_expression()] Expected type-name");
+
+			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+			else error_node(node, "[unary_expression()] Expected right paranthesis");
+		} else if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "[unary_expression()] Expected unary-expression or paranthesized type-name");
+	}
+
+	return add_node(node), ix;
+}
+
+static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, ASSIGNMENT_EXPRESSION, tokens[0]);
+
+	/*if ((parsed=conditional_expression(node, tokens+ix))) ix+=parsed;
+	else*/ if ((parsed=unary_expression(node, tokens+ix))) {
+		ix+=parsed;
+
+		if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
+			++ix;
+
+			if ((parsed=conditional_expression(node, tokens+ix))) ix+=parsed;
+			else if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
+			else error_node(node, "[assignment_expression()] Expected assignment-expression");
+		}
+	} else return free_node(node);
+
+	return add_node(node), ix;
+}
+
+static size_t direct_abstract_declarator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DIRECT_ABSTRACT_DECLARATOR, tokens[0]);
+	int tt;
+
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+		++ix;
+
+		if ((parsed=abstract_declarator(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected closing paranthesis");
+	}
+
+	while ((tt=tokens[ix]->type==TT_LEFT_SQUARE) || (tt=tokens[ix]->type==TT_LEFT_PARANTHESIS)) {
+		++ix;
+
+		if (tt==TT_LEFT_SQUARE) {
+			if (tokens[ix]->type==TT_STAR_OP) ++ix;
+			else if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
+			else error_node(node, "Expected assignment expression or *");
+
+			if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
+			else error_node(node, "Expected closing square bracket");
+		} else if (tt==TT_LEFT_PARANTHESIS) {
+			if ((parsed=parameter_type_list(node, tokens+ix))) ix+=parsed;
+			else error_node(node, "Expected parameter type list");
+
+			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+			else error_node(node, "Expected closing paranthesis");
+		}	/* No other type is possible */
+	}
+
+	return ix>0u ? (add_node(node), ix) : free_node(node);
+}
+
+static size_t abstract_declarator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, ABSTRACT_DECLARATOR, tokens[0]);
+
+	/* pointer | pointer? direct-abstract-declarator */
+
+	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
+
+	if ((parsed=direct_abstract_declarator(node, tokens+ix))) ix+=parsed;
+
+	if (ix>0u) return add_node(node), ix;
+	else return free_node(node);
+}
+
+static size_t parameter_declaration(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, PARAMETER_DECLARATION, tokens[0]);
+
+	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if ((parsed=declarator(node, tokens+ix)) || (parsed=abstract_declarator(node, tokens+ix)))
+		ix+=parsed;
+
+	return add_node(node), ix;;
+}
+
+static size_t parameter_list(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP);
+}
+
+static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, PARAMETER_TYPE_LIST, tokens[0]);
+
+	if ((parsed=parameter_list(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_COMMA_OP) {
+		++ix;
+
+		if (tokens[ix]->type==TT_ELIPSIS) ++ix;
+		else return free_node(node);
+	} else return free_node(node);
+
+	return add_node(node), ix;
+}
+
+static size_t storage_class_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	int tts[]={TT_TYPEDEF, TT_EXTERN, TT_STATIC, TT_AUTO, TT_REGISTER};
+
+	return single_token_any_of(parent, tokens, STORAGE_CLASS_SPECIFIER, sizeof tts/sizeof tts[0], tts);
+}
+
+static size_t struct_or_union(struct node_s *parent, struct token_s **tokens)
+{
+	int tts[]={TT_STRUCT, TT_UNION};
+
+	return single_token_any_of(parent, tokens, STRUCT_OR_UNION, sizeof tts/sizeof tts[0], tts);
+}
+
+
+static size_t specifier_qualifier_list(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, SPECIFIER_QUALIFIER_LIST, tokens[0]);
+
+	while ((parsed=type_specifier(node, tokens+ix)) || (parsed=type_qualifier(node, tokens+ix))) ix+=parsed;
+
+	return ix>0u ? (add_node(node), ix) : free_node(node);
+}
+
+static size_t struct_declarator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, STRUCT_DECLARATOR, tokens[0]);
+
+	if ((parsed=declarator(node, tokens+ix))) ix+=parsed;
+
+	if (tokens[ix]->type==TT_COLON_OP) {
+		++ix;
+
+		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected constant-expression");
+	}
+
+	if (ix>0u) return add_node(node), ix;
+	else return free_node(node);
+}
+
+static size_t struct_declarator_list(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, STRUCT_DECLARATOR_LIST, struct_declarator, TT_COMMA_OP);
+}
+
+static size_t struct_declaration(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, STRUCT_DECLARATION, tokens[0]);
+
+	fprintf(stderr, "struct_declaration() - 1\n");
+
+	if ((parsed=specifier_qualifier_list(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+	fprintf(stderr, "struct_declaration() - 2\n");
+
+	if ((parsed=struct_declarator_list(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+	fprintf(stderr, "struct_declaration() - 3\n");
+
+	if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
+	else return free_node(node);
+	fprintf(stderr, "struct_declaration() - 4\n");
+
+	return add_node(node), ix;
+}
+
+static size_t struct_declaration_list(struct node_s *parent, struct token_s **tokens)
+{
+	return many(parent, tokens, STRUCT_DECLARATION_LIST, struct_declaration);
+}
+
+static size_t struct_or_union_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	int id_or_list=0;
+	struct node_s *node=create_node(parent, STRUCT_OR_UNION_SPECIFIER, tokens[0]);
+
+	if ((parsed=struct_or_union(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if ((parsed=identifier(node, tokens+ix))) {ix+=parsed; id_or_list=1;}
+
+	if (tokens[ix]->type==TT_LEFT_CURLY) {
+		++ix;
+		id_or_list=1;
+
+		if ((parsed=struct_declaration_list(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected struct declarator list");
+
+		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
+		else error_node(node, "Expected right curly brace");
+	}
+
+	if (!id_or_list) error_node(node, "Expected struct/union tag name or struct declaration list");
+
+	return add_node(node), ix;
+}
+
+static size_t enumerator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, ENUMERATOR, tokens[0]);
+
+	if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
+		++ix;
+	
+		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected constant expression");
+	}
+
+	return add_node(node), ix;
+}
+
+static size_t enumerator_list(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, ENUMERATOR_LIST, enumerator, TT_COMMA_OP);
+}
+
+static size_t enum_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, ENUM_SPECIFIER, tokens[0]);
+
+	if (tokens[ix]->type==TT_ENUM) {
+		++ix;
+
+		if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
+
+		if (tokens[ix]->type==TT_LEFT_CURLY) {
+			++ix;
+
+			if ((parsed=enumerator_list(node, tokens+ix))) ix+=parsed;
+			else error_node(node, "Expected enumerator list");
+
+			if (tokens[ix]->type==TT_COMMA_OP) ++ix;
+			
+			if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
+			else error_node(node, "Expected closing brace");
+		}
+
+		if (ix < 2) error_node(node, "Expected identifier or enumerator list after enum");
+
+		return add_node(node), ix;
+	} else return free_node(node);
+}
+
+static size_t typedef_name(struct node_s *parent, struct token_s **tokens)
+{
+	fprintf(stderr, "[typedef_name()] Unimplemented !!!!!!!!!!!!!!!!\n");
+	return 0u;
+}
+
+static size_t type_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, TYPE_SPECIFIER, tokens[0]);
+
+	switch(tokens[ix]->type) {
+	case TT_VOID:
+	case TT_CHAR: case TT_SHORT: case TT_INT: case TT_LONG:
+	case TT_FLOAT: case TT_DOUBLE:
+	case TT_SIGNED: case TT_UNSIGNED:
+	case TT_BOOL:
+	case TT_COMPLEX:
+		fprintf(stderr, "type_specifier() - Yes this is a type spec. token\n");
+		++ix;
+		break;
+	default:
+		if ((parsed=struct_or_union_specifier(node, tokens+ix))
+			|| (parsed=enum_specifier(node, tokens+ix))
+			|| (parsed=typedef_name(node, tokens+ix))) ix+=parsed;
+	}
+
+	if (ix>0u) return add_node(node), ix;
+	else return free_node(node);
+}
+
+static size_t type_qualifier(struct node_s *parent, struct token_s **tokens)
+{
+	struct node_s *node=create_node(parent, TYPE_QUALIFIER, tokens[0]);
+
+	if (tokens[0]->type==TT_CONST
+		|| tokens[0]->type==TT_RESTRICT
+		|| tokens[0]->type==TT_VOLATILE) return add_node(node), 1u;
+	else return free_node(node);
+}
+
+static size_t type_qualifier_list(struct node_s *parent, struct token_s **tokens)
+{
+	return many(parent, tokens, TYPE_QUALIFIER_LIST, type_qualifier);
+}
+
+static size_t function_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	return single_token(parent, tokens, FUNCTION_SPECIFIER, TT_INLINE);
+}
+
+static size_t declaration_specifiers(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DECLARATION_SPECIFIERS, tokens[0]);
+
+	while ((parsed=storage_class_specifier(node, tokens+ix))
+		|| (parsed=type_specifier(node, tokens+ix))
+		|| (parsed=type_qualifier(node, tokens+ix))
+		|| (parsed=function_specifier(node, tokens+ix))) ix+=parsed;
+
+	if (ix>0u) return add_node(node), ix;
+	else return free_node(node);
+}
+
+static size_t pointer(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, POINTER, tokens[0]);
+
+	if (tokens[ix]->type==TT_STAR_OP) ++ix;
+	else return free_node(node);
+
+	if ((parsed=type_qualifier_list(node, tokens+ix))) ix+=parsed;
+
+	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
+
+	return add_node(node), ix;
+}
+
+static size_t identifier(struct node_s *parent, struct token_s **tokens)
+{
+	return single_token(parent, tokens, IDENTIFIER, TT_TEXTUAL);
+}
+
+static size_t identifier_list(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, IDENTIFIER_LIST, identifier, TT_COMMA_OP);
+}
+
+static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DIRECT_DECLARATOR, tokens[0]);
+	int tt;
+
+	/* identifier 
+	| "(" declarator ")" 
+	| direct-declarator "[" type-qualifier-list? assignment-expression? "]"
+	| direct-declarator "[" "static" type-qualifier-list? assignment-expression? "]"
+	| direct-declarator "[" type-qualifier-list? "static" assignment-expression? "]"
+	| direct-declarator "[" type-qualifier-list? "*" "]"
+	| direct-declarator "(" parameter-type-list ")"
+	| direct-declarator "(" identifier-list? ")" */
+
+	fprintf(stderr, "********** direct_declarator() - 1\n");
+
+	if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
+	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+		++ix;
+		fprintf(stderr, "********** direct_declarator() - 1a\n");
+
+		if ((parsed=declarator(node, tokens+ix))) {
+			ix+=parsed;
+
+			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+			else ix=0u;
+		} else ix=0u;
+	}
+
+	fprintf(stderr, "********** direct_declarator() - 2\n");
+	while ((tt=tokens[ix]->type==TT_LEFT_PARANTHESIS) || (tt=tokens[ix]->type==TT_LEFT_SQUARE)) {
+		++ix;
+		fprintf(stderr, "********** direct_declarator() - 2a\n");
+		if (tt==TT_LEFT_SQUARE) {
+			if (tokens[ix]->type==TT_STATIC) ++ix;
+
+			if ((parsed=type_qualifier_list(node, tokens+ix))) ix+=parsed;
+
+			/* TODO: Handle type-qualifier-list "*" */
+
+			if (tokens[ix]->type==TT_STATIC) ++ix;
+
+			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
+
+			if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
+			else error_node(node, "Expected right square bracket");
+		} else {	/* Paranthesis */
+			if ((parsed=parameter_type_list(node, tokens+ix))) ix+=parsed;
+			else if ((parsed=identifier_list(node, tokens+ix))) ix+=parsed;
+
+			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+			else return free_node(node);
+		}
+		fprintf(stderr, "********** direct_declarator() - 2b\n");
+	}
+
+	fprintf(stderr, "********** direct_declarator() - 3\n");
+	if(ix>0u) return add_node(node), ix;
+	else return free_node(node);
+}
+
+static size_t declarator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DECLARATOR, tokens[0]);
+
+	fprintf(stderr, "########## declarator() - 1\n");
+
+	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
+	fprintf(stderr, "########## declarator() - 2\n");
+
+	if ((parsed=direct_declarator(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+	fprintf(stderr, "########## declarator() - 3\n");
+
+	return add_node(node), ix;
+}
+
+static size_t initializer(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, INITIALIZER, tokens[0]);
+
+	if ((parsed=assignment_expression(node, tokens))) ix+=parsed;
+	else if ((parsed=initializer_list(node, tokens))) {
+		ix+=parsed;
+
+		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
+	} else return free_node(node);
+
+	return add_node(node), ix;
+}
+
+static size_t init_declarator(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, INIT_DECLARATOR, tokens[0]);
+
+	if ((parsed=declarator(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
+		++ix;
+
+		if ((parsed=initializer(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected initializer");
+	}
+
+	return add_node(node), ix;
+}
+
+static size_t init_declarator_list(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, INIT_DECLARATOR_LIST, init_declarator, TT_COMMA_OP);
+}
+
+static size_t declaration(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, DECLARATION, tokens[0]);
+
+	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if ((parsed=init_declarator_list(node, tokens+ix))) ix+=parsed;
+
+	if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
+	else return free_node(node); /*error_node(node, "Expected semicolon - ; at end of declaration");*/
+
+	return add_node(node), ix;
+}
+
+static size_t declaration_list(struct node_s *parent, struct token_s **tokens)
+{
+	return many(parent, tokens, DECLARATION_LIST, declaration);
+}
+
+static size_t constant_expression(struct node_s *parent, struct token_s **tokens)
+{
+	return conditional_expression(parent, tokens);	/* TODO: Use node type for cond. expr. */
+}
+
+static size_t labeled_statement(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, LABELED_STATEMENT, tokens[0]);
+
+	if ((parsed=identifier(node, tokens+ix))) {
+		ix+=parsed;
+
+		if (tokens[ix]->type==TT_COLON_OP) ++ix;
+		else return free_node(node);
+	} else if (tokens[ix]->type==TT_CASE) {
+		++ix;
+
+		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected constant expression after \"case\"");
+
+		if (tokens[ix]->type==TT_COLON_OP) ++ix;
+		else error_node(node, "Expected colon - : after constant expression in \"case\" statement");
+	} else if (tokens[ix]->type==TT_DEFAULT) {
+		++ix;
+
+		if (tokens[ix]->type==TT_COLON_OP) ++ix;
+		else error_node(node, "Expected colon - : after \"default\"");
+	} else return free_node(node);
+
+	if ((parsed=statement(node, tokens+ix))) ix+=parsed;	/* Made this optional */
+
+	return add_node(node), ix;
+}
+
+static size_t expression(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP);
+}
+
+static size_t expression_statement(struct node_s *parent, struct token_s **tokens)
+{
+	return postfix_token(parent, tokens, EXPRESSION_STATEMENT, expression, TT_SEMICOLON_OP);
+}
+
+static size_t selection_statement(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, SELECTION_STATEMENT, tokens[0]);
+
+	if (tokens[ix]->type==TT_IF) {
+		++ix;
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected left paranthesis - ( after if");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected condition expression for if statement");
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected right paranthesis - ) after condition expression");
+
+		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected statement in if statement");
+
+		if (tokens[ix]->type==TT_ELSE) {
+			++ix;
+
+			if ((parsed=statement(node, tokens+ix))) ix+=parsed;
+			else error_node(node, "Expected statement for else clause in if statement");
+		}
+
+		return add_node(node), ix;
+	} else if (tokens[ix]->type==TT_SWITCH) {
+		++ix;
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected left paranthesis - ( after switch");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected condition expression for switch statement");
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected right paranthesis - ) after condition expression");
+
+		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected statement in switch statement");
+
+		return add_node(node), ix;
+	} else return free_node(node);
+}
+
+static size_t iteration_statement(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, ITERATION_STATEMENT, tokens[0]);
+
+	if (tokens[ix]->type==TT_WHILE) {
+		++ix;
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected left paranthesis");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected expression");
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected right parantheses");
+
+		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected statement");
+	} else if (tokens[ix]->type==TT_DO) {
+		++ix;
+
+		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected statement");
+
+		if (tokens[ix]->type==TT_WHILE) ++ix;
+		else error_node(node, "Expected \"while\" keyword");
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected left paranthesis");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected expression");
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected right parantheses");
+
+		if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
+		else error_node(node, "Expected semicolon");
+	} else if (tokens[ix]->type==TT_FOR) {
+		++ix;
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected left paranthesis");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else if ((parsed=declaration(node, tokens+ix))) ix+=parsed;
+
+		if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
+		else error_node(node, "Expected semicolon");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+
+		if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
+		else error_node(node, "Expected semicolon");
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node(node, "Expected right paranthesis");
+
+		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected statement");
+	} else return free_node(node);
+
+	return add_node(node), ix;
+}
+
+static size_t jump_statement(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, JUMP_STATEMENT, tokens[0]);
+
+	if (tokens[ix]->type==TT_GOTO) {
+		if (tokens[++ix]->type==TT_TEXTUAL && tokens[++ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
+		else error_node(node, "Expected identifier and semicolon after goto");
+	} else if (tokens[ix]->type==TT_CONTINUE || tokens[ix]->type==TT_BREAK) {
+		if (tokens[++ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
+		else error_node(node, "Expected semicolon after continue/break");
+	} else if (tokens[ix]->type==TT_RETURN) {
+		++ix;
+		if (!(parsed=expression(node, tokens+ix))) error_node(node, "Expected expression after return");
+		ix+=parsed;
+		if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
+		else error_node(node, "Expected semicolon after return expression");
+	}
+
+	return 0u;
+}
+
+static size_t statement(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, STATEMENT, tokens[0]);
+
+	if ((parsed=labeled_statement(node, tokens+ix))
+		|| (parsed=compound_statement(node, tokens+ix))
+		|| (parsed=expression_statement(node, tokens+ix))
+		|| (parsed=selection_statement(node, tokens+ix))
+		|| (parsed=iteration_statement(node, tokens+ix))
+		|| (parsed=jump_statement(node, tokens+ix))) return add_node(node), parsed;
+	else return free_node(node);
+}
+
+static size_t block_item(struct node_s *parent, struct token_s **tokens)
+{
+	fprintf(stderr, "block_item()\n");
+	return any_of_2(parent, tokens, BLOCK_ITEM, declaration, statement);
+}
+
+static size_t block_item_list(struct node_s *parent, struct token_s **tokens)
+{
+	fprintf(stderr, "block_item_list()\n");
+	return many(parent, tokens, BLOCK_ITEM_LIST, block_item);
+}
+
+static size_t compound_statement(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, COMPOUND_STATEMENT, tokens[0]);
+
+	if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
+	else return free_node(node);
+
+	if ((parsed=block_item_list(node, tokens+ix))) ix+=parsed;
+
+	if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
+	else error_node(node, "Missing right curly brace - } at end of compound statement");
+
+	return add_node(node), ix;
+}
+
+static size_t function_definition(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, FUNCTION_DEFINITION, tokens[0]);
+
+	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if ((parsed=declarator(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	if ((parsed=declaration_list(node, tokens+ix))) ix+=parsed;
+
+	if ((parsed=compound_statement(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	return add_node(node), ix;
+}
+
+static size_t external_declaration(struct node_s *parent, struct token_s **tokens)
+{
+	return any_of_2(parent, tokens, EXTERNAL_DECLARATION, function_definition, declaration);
+}
+
+static size_t translation_unit(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, TRANSLATION_UNIT, tokens[0]);
+
+	while ((parsed=external_declaration(node, tokens+ix))) ix+=parsed;
+
+	return add_node(node), ix;
+}
+
+size_t parse(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed;
+	struct node_s *node;
+
+	g_root_node=node=create_node(parent, NT_UNIT, tokens[0]);
+
+	if ((parsed=translation_unit(node, tokens))) return add_node(node), parsed;
+	else return free_node(node);
+}
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 

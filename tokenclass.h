@@ -23,6 +23,10 @@ int ismatchingright(const struct token_s *start, const struct token_s *end);
 int isbracket(const struct token_s *token);
 int isvalue(const struct token_s *token);
 int istobeignored(const struct token_s *token);
+int issemicolon(const struct token_s *token);
+int isgoto(const struct token_s *token);
+int isbreak(const struct token_s *token);
+int iscontinue(const struct token_s *token);
 
 #endif
 

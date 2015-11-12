@@ -77,7 +77,29 @@ static char *token_type_names[]={
 	"TT_COLON_OP",
 	"TT_STRUCT",
 	"TT_UNION",
-	"TT_ENUM"
+	"TT_ENUM",
+	"TT_INLINE",
+	"TT_RESTRICT",
+	"TT_CONST",
+	"TT_VOLATILE",
+	"TT_VOID",
+	"TT_CHAR",
+	"TT_SHORT",
+	"TT_INT",
+	"TT_LONG",
+	"TT_FLOAT",
+	"TT_DOUBLE",
+	"TT_SIGNED",
+	"TT_UNSIGNED",
+	"TT_BOOL",
+	"TT_COMPLEX",
+	"TT_TYPEDEF",
+	"TT_EXTERN",
+	"TT_STATIC",
+	"TT_AUTO",
+	"TT_REGISTER",
+	"TT_SIZEOF",
+	"TT_ELIPSIS",
 };
 
 /* << Rewrite for generic lexing 
@@ -158,8 +180,6 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 
 	if (!(token=(struct token_s *)calloc(1, sizeof *token))) return NULL;
 
-	//memset(&token, 0, sizeof token);
-
 	token->sb=sb;
 	token->sbix=sbix(sb);
 	token->lno=*lno;
@@ -207,6 +227,27 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "struct")) token->type=TT_STRUCT;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "union")) token->type=TT_UNION;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "enum")) token->type=TT_ENUM;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "inline")) token->type=TT_INLINE;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "restrict")) token->type=TT_RESTRICT;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "const")) token->type=TT_CONST;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "volatile")) token->type=TT_VOLATILE;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "void")) token->type=TT_VOID;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "char")) token->type=TT_CHAR;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "short")) token->type=TT_SHORT;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "int")) token->type=TT_INT;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "long")) token->type=TT_LONG;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "float")) token->type=TT_FLOAT;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "double")) token->type=TT_DOUBLE;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "signed")) token->type=TT_SIGNED;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "unsigned")) token->type=TT_UNSIGNED;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Bool")) token->type=TT_BOOL;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Complex")) token->type=TT_COMPLEX;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "typedef")) token->type=TT_TYPEDEF;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "extern")) token->type=TT_EXTERN;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "static")) token->type=TT_STATIC;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "auto")) token->type=TT_AUTO;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "register")) token->type=TT_REGISTER;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "sizeof")) token->type=TT_SIZEOF;
 		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '0':
@@ -400,6 +441,15 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 	case '.':
 		token->type=TT_DOT_OP;
 		(void)sbput(token->sb, ch);
+		if ((ch=fetch(infp, lno, cno))=='.') {
+			(void)sbput(token->sb, ch);
+			if ((ch=fetch(infp, lno, cno))=='.') {
+				token->type=TT_ELIPSIS;
+				(void)sbput(token->sb, ch);
+			} else {
+				(void)unfetch(ch, infp, lno, cno);	/* TODO: Handle case when ".." (not elipsis, just 2 dots) */
+			}
+		} else (void)unfetch(ch, infp, lno, cno);
 		break;
 	case '&':
 		token->type=TT_BIT_AND_OP;
@@ -479,9 +529,16 @@ int freetoken(struct token_s *token)
 
 const char *token_text(const struct token_s *token)
 {
-	if (!token) return "";
-	if (!token->sb) return "";
+	if (!token) return "<no-token>";
+	if (!token->sb) return "<no-token-text>";
 	return sbcstr(token->sb, token->sbix);
+}
+
+const char *token_fname(const struct token_s *token)
+{
+	if (!token) return "<no-token>";
+	if (!token->fname) return "<no-token-fname>";
+	return token->fname;
 }
 
 int token_lno(const struct token_s *token)
@@ -498,7 +555,7 @@ int token_cno(const struct token_s *token)
 
 const char *token_type(const struct token_s *token)
 {
-	if (!token) return "";
+	if (!token) return "<no-token>";
 	return token_type_names[token->type];
 }
 

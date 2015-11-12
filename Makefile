@@ -3,24 +3,24 @@
 
 
 CC=cc
-CFLAGS=-Wall
+CFLAGS=-Wall -g
 LD=cc
-LDFLAGS=-Wall
+LDFLAGS=-Wall -g
 
 all: zzparser zzcpp lexer.o
 
-zzcpp: token.o strbuf.o zzcpp.o
+zzcpp: token.o strbuf.o zzcpp.o	dump.o
 
 zzcpp.o: zzcpp.c token.h strbuf.h
 	$(CC) -o zzcpp.o $(CFLAGS) -c zzcpp.c
 
-zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o
-	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o
+zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o
+	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o
 
-zzparser.o: zzparser.c parser.h token.h strbuf.h
+zzparser.o: zzparser.c parser.h token.h strbuf.h parcom.h
 	$(CC) -o zzparser.o $(CFLAGS) -c zzparser.c
 
-parser.o: parser.c parser.h token.h tokenclass.h
+parser.o: parser.c parser.h token.h tokenclass.h dump.h
 	$(CC) -o parser.o $(CFLAGS) -c parser.c
 
 token.o: token.c token.h strbuf.h
@@ -38,6 +38,12 @@ lexer.o: lexer.c lexer.h
 
 stack.o: stack.c stack.h
 	$(CC) -o stack.o $(CFLAGS) -c stack.c
+
+dump.o: dump.c dump.h
+	$(CC) -o dump.o $(CFLAGS) -c dump.c
+
+parcom.o: parcom.c parcom.h
+	$(CC) -o parcom.o $(CFLAGS) -c parcom.c
 
 .PHONY: clean
 

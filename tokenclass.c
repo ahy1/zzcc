@@ -224,3 +224,22 @@ int istobeignored(const struct token_s *token)
 		|| (isname(token) && !strcmp(token_text(token), "__extension__"));
 }
 
+int issemicolon(const struct token_s *token)
+{
+	return token->type==TT_SEMICOLON_OP;
+}
+
+int isgoto(const struct token_s *token)
+{
+	return token->type==TT_GOTO;
+}
+
+int isbreak(const struct token_s *token)
+{
+	return token->type==TT_BREAK;
+}
+
+int iscontinue(const struct token_s *token)
+{
+	return token->type==TT_CONTINUE;
+}
