@@ -239,7 +239,6 @@ static int add_node(struct node_s *node)
 
 }
 
-
 #if 0
 static int add_typealias(struct node_s *node)
 {
@@ -378,7 +377,6 @@ void print_node_json(struct node_s *node, int ind)
 
 	(void)putchar(']');
 }
-
 
 #if 0
 typedef int (*predicate_t)(const struct token_s *);
@@ -527,7 +525,6 @@ static size_t single_token_any_of(struct node_s *parent, struct token_s **tokens
 	else return free_node(node);
 }
 
-#if 0
 static size_t prepostfix_tokens(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **), int pre_tt, int post_tt)
 {
@@ -545,8 +542,6 @@ static size_t prepostfix_tokens(struct node_s *parent, struct token_s **tokens, 
 
 	return add_node(node), ix;
 }
-#endif
-
 
 /* Expression parser: */
 
@@ -685,42 +680,33 @@ static size_t type_qualifier(struct node_s *parent, struct token_s **tokens);
 
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
-	int seps[]={TT_PLUS_OP, TT_MINUS_OP};
-
-	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, cast_expression, 
-		sizeof seps/sizeof seps[0], seps);
+	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, 
+		cast_expression, 2, (int []) {TT_PLUS_OP, TT_MINUS_OP});
 }
 
 static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
 {
-	int seps[]={TT_PLUS_OP, TT_MINUS_OP};
-
-	return separated_any_token(parent, tokens, ADDITIVE_EXPRESSION, multiplicative_expression, 
-		sizeof seps/sizeof seps[0], seps);
+	return separated_any_token(parent, tokens, ADDITIVE_EXPRESSION, 
+		multiplicative_expression, 2, (int []) {TT_PLUS_OP, TT_MINUS_OP});
 }
 
 static size_t shift_expression(struct node_s *parent, struct token_s **tokens)
 {
-	int seps[]={TT_LEFTSHIFT_OP, TT_RIGHTSHIFT_OP};
-
-	return separated_any_token(parent, tokens, SHIFT_EXPRESSION, additive_expression, 
-		sizeof seps/sizeof seps[0], seps);
+	return separated_any_token(parent, tokens, SHIFT_EXPRESSION, 
+		additive_expression, 2, (int []) {TT_LEFTSHIFT_OP, TT_RIGHTSHIFT_OP});
 }
 
 static size_t relational_expression(struct node_s *parent, struct token_s **tokens)
 {
-	int seps[]={TT_LESSTHAN_OP, TT_GREATERTHAN_OP, TT_LESSTHAN_EQUAL_OP, TT_GREATERTHAN_EQUAL_OP};
-
-	return separated_any_token(parent, tokens, RELATIONAL_EXPRESSION, shift_expression, 
-		sizeof seps/sizeof seps[0], seps);
+	return separated_any_token(parent, tokens, RELATIONAL_EXPRESSION, 
+		shift_expression,
+		4, (int []) {TT_LESSTHAN_OP, TT_GREATERTHAN_OP, TT_LESSTHAN_EQUAL_OP, TT_GREATERTHAN_EQUAL_OP});
 }
 
 static size_t equality_expression(struct node_s *parent, struct token_s **tokens)
 {
-	int seps[]={TT_EQUAL_OP, TT_NOT_EQUAL_OP};
-
-	return separated_any_token(parent, tokens, EQUALITY_EXPRESSION, relational_expression, 
-		sizeof seps/sizeof seps[0], seps);
+	return separated_any_token(parent, tokens, EQUALITY_EXPRESSION, 
+		relational_expression, 2, (int []) {TT_EQUAL_OP, TT_NOT_EQUAL_OP});
 }
 
 static size_t and_expression(struct node_s *parent, struct token_s **tokens)
@@ -774,9 +760,8 @@ static size_t conditional_expression(struct node_s *parent, struct token_s **tok
 
 static size_t constant(struct node_s *parent, struct token_s **tokens)
 {
-	int tts[]={TT_CHARACTER, TT_NUMBER};
-
-	return single_token_any_of(parent, tokens, CONSTANT, sizeof tts/sizeof tts[0], tts);
+	return single_token_any_of(parent, tokens, CONSTANT, 
+		2, (int []) {TT_CHARACTER, TT_NUMBER});
 }
 
 static size_t string_literal(struct node_s *parent, struct token_s **tokens)
@@ -786,23 +771,15 @@ static size_t string_literal(struct node_s *parent, struct token_s **tokens)
 
 static size_t primary_expression(struct node_s *parent, struct token_s **tokens)
 {
-	size_t parsed, ix=0u;
+	size_t parsed;
 	struct node_s *node=create_node(parent, PRIMARY_EXPRESSION, tokens[0]);
 
-	if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
-	else if ((parsed=constant(node, tokens+ix))) ix+=parsed;
-	else if ((parsed=string_literal(node, tokens+ix))) ix+=parsed;
-	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
-		++ix;
-
-		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else return free_node(node);
-
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return free_node(node);
-	}
-
-	return add_node(node), ix;
+	if ((parsed=identifier(node, tokens))
+		|| (parsed=constant(node, tokens))
+		|| (parsed=string_literal(node, tokens))) return add_node(node), parsed;
+	else if ((parsed=prepostfix_tokens(node, tokens, PRIMARY_EXPRESSION,
+		expression, TT_LEFT_PARANTHESIS, TT_RIGHT_PARANTHESIS))) return add_subnode(node), parsed;
+	else return free_node(node);
 }
 
 static size_t type_name(struct node_s *parent, struct token_s **tokens)
@@ -908,7 +885,7 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 
 static size_t unary_operator(struct node_s *parent, struct token_s **tokens)
 {
-	int tts[]={};
+	int tts[]={TT_BIT_AND_OP, TT_STAR_OP, TT_PLUS_OP, TT_MINUS_OP, TT_COMPLEMENT_OP, TT_NEGATION_OP};
 	struct node_s *node=create_node(parent, UNARY_OPERATOR, tokens[0]);
 
 	if (is_any_of(tokens[0]->type, sizeof tts/sizeof tts[0], tts)) return add_node(node), 1u;
