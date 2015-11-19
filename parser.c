@@ -85,20 +85,28 @@ static char *node_type_names[]={
 
 struct node_s *g_root_node=NULL;
 
+static void print_token_details(FILE *fp, struct token_s *token)
+{
+	fprintf(fp, "%3d/%2d [%-8s] %-25s", token_lno(token), token_cno(token),
+		token_text(token), token_type(token));
+}
+
+static void print_node_type(FILE *fp, struct node_s *node)
+{
+	fprintf(stderr, "{%-26s}", node_type_names[node->type]); 
+}
+
 static void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
 	int level=node->level;
 
-	/*fprintf(stderr, "L% 3d", level);*/
-
-	fprintf(stderr, "% 3d/% 2d", token_lno(token), token_cno(token));
+	print_token_details(stderr, token);
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "%-25s %-25s [%-10s]: ", 
-		node_type_names[node->type], 
-		token_type(token), token_text(token));
+	print_node_type(stderr, node);
+
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
 	va_end(arg);
@@ -109,15 +117,12 @@ static void log_node(struct node_s *node, const char *fmt, ...)
 	va_list arg;
 	int level=node->level;
 
-	/*fprintf(stderr, "L% 3d", level);*/
-
-	fprintf(stderr, "% 3d/% 2d", token_lno(node->token), token_cno(node->token));
+	print_token_details(stderr, node->token);
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "%-25s %-25s [%-10s]: ", 
-		node_type_names[node->type], 
-		token_type(node->token), token_text(node->token));
+	print_node_type(stderr, node);
+
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
 	va_end(arg);
@@ -136,8 +141,7 @@ struct node_s *create_node(struct node_s *parent, int type, struct token_s *toke
 	node->type=type;
 	node->token=token;
 
-	log_node_token(node, token, ". create_node() Trying node %s on %s\n",
-		node_type_names[node->type],
+	log_node_token(node, token, ". create_node() Trying on %s\n",
 		node_type_names[node->parent->type]);
 
 	return node;
@@ -147,8 +151,7 @@ size_t free_node(struct node_s *node)
 {
 	size_t ix;
 
-	log_node(node, "- free_node(): Freeing node %s from %s\n", 
-		node_type_names[node->type],
+	log_node(node, "- free_node(): Freeing from %s\n", 
 		node_type_names[node->parent->type]);
 
 	for (ix=0; ix<node->nsubnodes; ++ix) free(node->subnodes[ix]);
@@ -205,8 +208,7 @@ static struct node_s *last_subnode(struct node_s *node)
 
 static int add_node(struct node_s *node)
 {
-	log_node(node, "+ add_node(): Adding %s to %s\n", 
-		node_type_names[node->type],
+	log_node(node, "+ add_node(): Adding %s\n", 
 		node_type_names[node->parent->type]);
 
 	node->parent->subnodes=(struct node_s **)realloc(
