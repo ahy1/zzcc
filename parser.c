@@ -39,6 +39,7 @@ static char *node_type_names[]={
 	"INITIALIZER_LIST",
 	"POSTFIX_EXPRESSION",
 	"UNARY_OPERATOR",
+	"CAST_EXPRESSION",
 	"UNARY_EXPRESSION",
 	"ASSIGNMENT_EXPRESSION",
 	"DIRECT_ABSTRACT_DECLARATOR",
@@ -681,7 +682,7 @@ static size_t type_qualifier(struct node_s *parent, struct token_s **tokens);
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
 	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, 
-		cast_expression, 2, (int []) {TT_PLUS_OP, TT_MINUS_OP});
+		cast_expression, 3, (int []) {TT_STAR_OP, TT_SLASH_OP, TT_PERCENT_OP});
 }
 
 static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
@@ -895,7 +896,7 @@ static size_t unary_operator(struct node_s *parent, struct token_s **tokens)
 static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+	struct node_s *node=create_node(parent, CAST_EXPRESSION, tokens[0]);
 
 	if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
@@ -1025,10 +1026,14 @@ static size_t parameter_declaration(struct node_s *parent, struct token_s **toke
 	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	if ((parsed=declarator(node, tokens+ix)) || (parsed=abstract_declarator(node, tokens+ix)))
+	if ((parsed=declarator(node, tokens+ix))
+		|| (parsed=abstract_declarator(node, tokens+ix))) {
 		ix+=parsed;
 
-	return add_node(node), ix;;
+		return add_node(node), ix;
+	}
+
+	return add_node(node), ix;
 }
 
 static size_t parameter_list(struct node_s *parent, struct token_s **tokens)
@@ -1312,25 +1317,20 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 	| direct-declarator "(" parameter-type-list ")"
 	| direct-declarator "(" identifier-list? ")" */
 
-	fprintf(stderr, "********** direct_declarator() - 1\n");
-
 	if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
-		fprintf(stderr, "********** direct_declarator() - 1a\n");
 
 		if ((parsed=declarator(node, tokens+ix))) {
 			ix+=parsed;
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-			else ix=0u;
-		} else ix=0u;
+			else return free_node(node);/*ix=0u;*/
+		} else return free_node(node); /*ix=0u;*/
 	}
 
-	fprintf(stderr, "********** direct_declarator() - 2\n");
-	while ((tt=tokens[ix]->type==TT_LEFT_PARANTHESIS) || (tt=tokens[ix]->type==TT_LEFT_SQUARE)) {
+	while ((tt=tokens[ix]->type)==TT_LEFT_PARANTHESIS || (tt=tokens[ix]->type)==TT_LEFT_SQUARE) {
 		++ix;
-		fprintf(stderr, "********** direct_declarator() - 2a\n");
 		if (tt==TT_LEFT_SQUARE) {
 			if (tokens[ix]->type==TT_STATIC) ++ix;
 
@@ -1351,10 +1351,8 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 			else return free_node(node);
 		}
-		fprintf(stderr, "********** direct_declarator() - 2b\n");
 	}
 
-	fprintf(stderr, "********** direct_declarator() - 3\n");
 	if(ix>0u) return add_node(node), ix;
 	else return free_node(node);
 }
@@ -1364,14 +1362,10 @@ static size_t declarator(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, DECLARATOR, tokens[0]);
 
-	fprintf(stderr, "########## declarator() - 1\n");
-
 	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
-	fprintf(stderr, "########## declarator() - 2\n");
 
 	if ((parsed=direct_declarator(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
-	fprintf(stderr, "########## declarator() - 3\n");
 
 	return add_node(node), ix;
 }
@@ -1608,13 +1602,15 @@ static size_t jump_statement(struct node_s *parent, struct token_s **tokens)
 		else error_node(node, "Expected semicolon after continue/break");
 	} else if (tokens[ix]->type==TT_RETURN) {
 		++ix;
-		if (!(parsed=expression(node, tokens+ix))) error_node(node, "Expected expression after return");
-		ix+=parsed;
+
+		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+		else error_node(node, "Expected expression after return");
+
 		if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
 		else error_node(node, "Expected semicolon after return expression");
 	}
 
-	return 0u;
+	return free_node(node);
 }
 
 static size_t statement(struct node_s *parent, struct token_s **tokens)
