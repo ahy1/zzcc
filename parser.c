@@ -179,7 +179,6 @@ static size_t error_node(struct node_s *node, const char *fmt, ...)
 	return free_node(node);
 }
 
-#if 0
 static size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
@@ -187,8 +186,9 @@ static size_t error_node_token(struct node_s *node, struct token_s *token, const
 
 	while(level--) (void)putc(' ', stderr);
 
-	fprintf(stderr, "ERROR (%-25s %-10s %-10s): ", 
+	fprintf(stderr, "ERROR (%-25s %3d/%2d %-10s %-10s): ", 
 		node_type_names[node->type], 
+		token_lno(token), token_cno(token),
 		token_type(token), token_text(token));
 	va_start(arg, fmt);
 	(void)vfprintf(stderr, fmt, arg);
@@ -198,7 +198,6 @@ static size_t error_node_token(struct node_s *node, struct token_s *token, const
 
 	return free_node(node);
 }
-#endif
 
 #if 0
 static struct node_s *last_subnode(struct node_s *node)
@@ -1596,18 +1595,18 @@ static size_t jump_statement(struct node_s *parent, struct token_s **tokens)
 
 	if (tokens[ix]->type==TT_GOTO) {
 		if (tokens[++ix]->type==TT_TEXTUAL && tokens[++ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
-		else error_node(node, "Expected identifier and semicolon after goto");
+		else error_node_token(node, tokens[ix], "Expected identifier and semicolon after goto");
 	} else if (tokens[ix]->type==TT_CONTINUE || tokens[ix]->type==TT_BREAK) {
 		if (tokens[++ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
-		else error_node(node, "Expected semicolon after continue/break");
+		else error_node_token(node, tokens[ix], "Expected semicolon after continue/break");
 	} else if (tokens[ix]->type==TT_RETURN) {
 		++ix;
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected expression after return");
+		else error_node_token(node, tokens[ix], "Expected expression after return");
 
 		if (tokens[ix]->type==TT_SEMICOLON_OP) return add_node(node), ++ix;
-		else error_node(node, "Expected semicolon after return expression");
+		else error_node_token(node, tokens[ix], "Expected semicolon after return expression");
 	}
 
 	return free_node(node);
