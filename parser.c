@@ -208,7 +208,7 @@ static struct node_s *last_subnode(struct node_s *node)
 
 static int add_node(struct node_s *node)
 {
-	log_node(node, "+ add_node(): Adding %s\n", 
+	log_node(node, "+ add_node(): Adding to %s\n", 
 		node_type_names[node->parent->type]);
 
 	node->parent->subnodes=(struct node_s **)realloc(
@@ -1009,8 +1009,6 @@ static size_t abstract_declarator(struct node_s *parent, struct token_s **tokens
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, ABSTRACT_DECLARATOR, tokens[0]);
 
-	/* pointer | pointer? direct-abstract-declarator */
-
 	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
 
 	if ((parsed=direct_abstract_declarator(node, tokens+ix))) ix+=parsed;
@@ -1051,7 +1049,7 @@ static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens
 
 		if (tokens[ix]->type==TT_ELIPSIS) ++ix;
 		else return free_node(node);
-	} else return free_node(node);
+	}
 
 	return add_node(node), ix;
 }
