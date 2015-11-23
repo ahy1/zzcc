@@ -121,17 +121,12 @@ int main(int argc, char *argv[])
 	}
 
 	while ((token=gettoken(fp, sb, &lno, &cno))) {
-		//print_token("main()", token);
-
 		/* TODO: Handle TT_UNKNOWN as error in the future */
 		if (!istobeignored(token) && token->type!=TT_NULL) {
 			//(void)puts(" Added");
 			tokens=(struct token_s **)realloc(tokens, ++ntokens * sizeof *tokens);
 			tokens[ntokens-1]=token;
 		}
-
-		//printf("[%s]\n", sbcstr(sb, token->sbix));
-		//freetoken(token);
 	}
 	tokens=(struct token_s **)realloc(tokens, ++ntokens * sizeof *tokens);
 	tokens[ntokens-1]=&end_token;
@@ -141,9 +136,6 @@ int main(int argc, char *argv[])
 
 	parsed=parse(&root_node, tokens);
 
-	//printf(" ====== Nodes\n");
-	//print_node(&root_node, 0);
-
 	//printf(" ====== Nodes (JSON)\n");
 	print_node_json(&root_node, 0);
 
@@ -151,7 +143,7 @@ int main(int argc, char *argv[])
 
 	(void)sbfree(sb);
 
-	fprintf(stderr, "tokens=%d, parsed=%d\n", (int)ntokens, (int)parsed);
+	printf("tokens=%d, parsed=%d\n", (int)ntokens, (int)parsed);
 
 	return (ntokens-1u)==parsed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
