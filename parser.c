@@ -165,9 +165,6 @@ size_t free_node(struct node_s *node)
 static size_t error_node(struct node_s *node, const char *fmt, ...)
 {
 	va_list arg;
-	int level=node->level;
-
-	while(level--) (void)putc(' ', stderr);
 
 	fprintf(stderr, "ERROR (%s): ", node_type_names[node->type]);
 	va_start(arg, fmt);
@@ -182,11 +179,8 @@ static size_t error_node(struct node_s *node, const char *fmt, ...)
 static size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
-	int level=node->level;
 
-	while(level--) (void)putc(' ', stderr);
-
-	fprintf(stderr, "ERROR (%-25s %3d/%2d %-10s %-10s): ", 
+	fprintf(stderr, "ERROR (%s %d/%d %s %s): ", 
 		node_type_names[node->type], 
 		token_lno(token), token_cno(token),
 		token_type(token), token_text(token));
@@ -897,16 +891,18 @@ static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, CAST_EXPRESSION, tokens[0]);
 
-	if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
-	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+	while (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
 		if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
 		else return free_node(node);
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else return free_node(node);
-	} else return free_node(node);
+		else error_node_token(node, tokens[ix], "Expected closing paranthesis");
+	}
+
+	if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
 
 	return add_node(node), ix;
 }

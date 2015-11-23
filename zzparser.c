@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
 	int lno=1, cno=0;
 	struct token_s end_token={NULL, 0, TT_END, 0, 0, NULL, 0, 0};
 	const char *testmodule=NULL, *testcode=NULL;
+	size_t parsed;
 
 	if (argc>1 && !strcmp(argv[1], "-t")) {
 		if (argc>2) testmodule=argv[2];
@@ -138,7 +139,7 @@ int main(int argc, char *argv[])
 	memset(&root_node, 0, sizeof root_node);
 	root_node.type=NT_ROOT;
 
-	(void)parse(&root_node, tokens);
+	parsed=parse(&root_node, tokens);
 
 	//printf(" ====== Nodes\n");
 	//print_node(&root_node, 0);
@@ -150,7 +151,9 @@ int main(int argc, char *argv[])
 
 	(void)sbfree(sb);
 
-	return EXIT_SUCCESS;
+	fprintf(stderr, "tokens=%d, parsed=%d\n", (int)ntokens, (int)parsed);
+
+	return (ntokens-1u)==parsed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 
