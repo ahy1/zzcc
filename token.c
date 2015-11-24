@@ -306,10 +306,10 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		token->type=TT_PLUS_OP;
 		(void)sbput(token->sb, ch);
 		if ((ch=fetch(infp, lno, cno))=='+') {
-			token->type=TT_PLUS_ASSIGNMENT_OP;
+			token->type=TT_PLUSPLUS_OP;
 			(void)sbput(token->sb, ch);
 		} else if (ch=='=') {
-			token->type=TT_PLUSPLUS_OP;
+			token->type=TT_PLUS_ASSIGNMENT_OP;
 			(void)sbput(token->sb, ch);
 		} else (void)unfetch(ch, infp, lno, cno);
 		break;
