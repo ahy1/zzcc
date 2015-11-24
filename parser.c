@@ -58,6 +58,7 @@ static char *node_type_names[]={
 	"ENUMERATOR",
 	"ENUMERATOR_LIST",
 	"ENUM_SPECIFIER",
+	"TYPEDEF_NAME",
 	"TYPE_SPECIFIER",
 	"TYPE_QUALIFIER",
 	"TYPE_QUALIFIER_LIST",
@@ -249,7 +250,6 @@ static int add_typealias(struct node_s *node)
 }
 #endif
 
-#if 0
 static int istypealias(const struct node_s *node, const struct token_s *token)
 {
 	size_t ix;
@@ -263,7 +263,6 @@ static int istypealias(const struct node_s *node, const struct token_s *token)
 
 	return 0;
 }
-#endif
 
 static void indent(int ind)
 {
@@ -1209,8 +1208,10 @@ static size_t enum_specifier(struct node_s *parent, struct token_s **tokens)
 
 static size_t typedef_name(struct node_s *parent, struct token_s **tokens)
 {
-	fprintf(stderr, "[typedef_name()] Unimplemented !!!!!!!!!!!!!!!!\n");
-	return 0u;
+	struct node_s *node=create_node(parent, TYPEDEF_NAME, tokens[0]);
+
+	if (istypealias(node, tokens[0])) return add_node(node), 1u;
+	else return free_node(node);
 }
 
 static size_t type_specifier(struct node_s *parent, struct token_s **tokens)

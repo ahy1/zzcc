@@ -318,10 +318,10 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		token->type=TT_MINUS_OP;
 		(void)sbput(token->sb, ch);
 		if ((ch=fetch(infp, lno, cno))=='-') {
-			token->type=TT_MINUS_ASSIGNMENT_OP;
+			token->type=TT_MINUSMINUS_OP;
 			(void)sbput(token->sb, ch);
 		} else if (ch=='=') {
-			token->type=TT_MINUSMINUS_OP;
+			token->type=TT_MINUS_ASSIGNMENT_OP;
 			(void)sbput(token->sb, ch);
 		} else if (ch=='>') {
 			token->type=TT_ARROW_OP;

@@ -1,4 +1,3 @@
 
-struct s {
-	int i;
-};
+typedef int t;
+
