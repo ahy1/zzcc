@@ -141,6 +141,7 @@ struct node_s *create_node(struct node_s *parent, int type, struct token_s *toke
 		node->scope_parent=parent;
 	node->level=node->parent->level+1;
 	node->type=type;
+	node->in_typedef_declaration=node->parent->in_typedef_declaration;
 	node->token=token;
 
 	log_node_token(node, token, ". create_node() Trying on %s\n",
@@ -213,7 +214,7 @@ static int add_node(struct node_s *node)
 	return 0;
 }
 
-/*static*/ int add_subnode(struct node_s *node)
+static int add_subnode(struct node_s *node)
 {
 	struct node_s *subnode;
 
@@ -234,12 +235,11 @@ static int add_node(struct node_s *node)
 
 }
 
-#if 0
 static int add_typealias(struct node_s *node)
 {
 	const char *text=token_text(node->token);
 
-	log_node(node, "add_typealias(): Adding to %s - %s\n", 
+	log_node(node, "@ add_typealias(): Adding to %s - %s\n", 
 		node_type_names[node->scope_parent->type], text);
 
 	node->scope_parent->typealiases=(const char **)realloc(
@@ -248,7 +248,6 @@ static int add_typealias(struct node_s *node)
 
 	return 0;
 }
-#endif
 
 static int istypealias(const struct node_s *node, const struct token_s *token)
 {
@@ -1290,7 +1289,17 @@ static size_t pointer(struct node_s *parent, struct token_s **tokens)
 
 static size_t identifier(struct node_s *parent, struct token_s **tokens)
 {
-	return single_token(parent, tokens, IDENTIFIER, TT_TEXTUAL);
+	struct node_s *node=create_node(parent, IDENTIFIER, tokens[0]);
+
+	if (tokens[0]->type==TT_TEXTUAL) {
+		if (node->in_typedef_declaration) {
+			add_typealias(node);
+		}
+
+		return add_node(node), 1u;
+	} else return free_node(node);
+/*
+	return single_token(parent, tokens, IDENTIFIER, TT_TEXTUAL);*/
 }
 
 static size_t identifier_list(struct node_s *parent, struct token_s **tokens)
@@ -1313,8 +1322,11 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 	| direct-declarator "(" parameter-type-list ")"
 	| direct-declarator "(" identifier-list? ")" */
 
-	if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
-	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+	if ((parsed=identifier(node, tokens+ix))) {
+		ix+=parsed;
+		if (node->in_typedef_declaration) {
+		}
+	} else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
 		if ((parsed=declarator(node, tokens+ix))) {
@@ -1408,6 +1420,8 @@ static size_t declaration(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, DECLARATION, tokens[0]);
+
+	if (tokens[0]->type==TT_TYPEDEF) node->in_typedef_declaration=1;
 
 	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);

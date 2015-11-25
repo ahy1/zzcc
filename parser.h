@@ -91,6 +91,7 @@ struct node_s {
 	int type;
 	int subtype;			/* For operators, the token type is here */
 	int level;			/* Level in syntax three */
+	int in_typedef_declaration;	/* Indicates that this node is part of typedef declaration */
 	struct token_s *token;		/* (optional) Token identifying data for this node */
 	struct node_s **subnodes;
 	size_t nsubnodes;
