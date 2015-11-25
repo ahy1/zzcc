@@ -1633,8 +1633,12 @@ static size_t statement(struct node_s *parent, struct token_s **tokens)
 
 static size_t block_item(struct node_s *parent, struct token_s **tokens)
 {
-	fprintf(stderr, "block_item()\n");
-	return any_of_2(parent, tokens, BLOCK_ITEM, declaration, statement);
+	/* Node-less parse rule */
+	size_t parsed;
+
+	if ((parsed=declaration(parent, tokens)) || (parsed=statement(parent, tokens)))
+		return parsed;
+	else return 0u;
 }
 
 static size_t block_item_list(struct node_s *parent, struct token_s **tokens)
