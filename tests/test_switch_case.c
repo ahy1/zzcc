@@ -14,6 +14,7 @@ int main()
 		break;
 	default:
 	}
+
 	return 0;
 }
 

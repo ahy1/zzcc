@@ -410,22 +410,22 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	fprintf(stderr, "separated() - 1\n");
+	fprintf(stderr, "separated() - 1 [%s]\n", token_text(tokens[ix]));
 
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	fprintf(stderr, "separated() - 2 - ix=%d\n", (int)ix);
+	fprintf(stderr, "separated() - 2 - ix=%d, [%s]\n", (int)ix, token_text(tokens[ix]));
 	while (tokens[ix]->type==tt_separator) {
-		fprintf(stderr, "separated() - 2a - ix=%d\n", (int)ix);
+		fprintf(stderr, "separated() - 2a - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
 		++ix;
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 		else error_node(node, "[separated()] Unexpexted parse");
-		fprintf(stderr, "separated() - 2b - ix=%d\n", (int)ix);
+		fprintf(stderr, "separated() - 2b - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
 	}
 
-	fprintf(stderr, "separated() - 3 - ix=%d\n", (int)ix);
+	fprintf(stderr, "separated() - 3 - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
 	return add_node(node), ix;
 }
 
@@ -944,20 +944,22 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, ASSIGNMENT_EXPRESSION, tokens[0]);
 
-	/*if ((parsed=conditional_expression(node, tokens+ix))) ix+=parsed;
-	else*/ if ((parsed=unary_expression(node, tokens+ix))) {
+	if ((parsed=unary_expression(node, tokens+ix))) {
 		ix+=parsed;
 
 		if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
 			++ix;
 
-			if ((parsed=conditional_expression(node, tokens+ix))) ix+=parsed;
-			else if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
+			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
 			else error_node(node, "[assignment_expression()] Expected assignment-expression");
-		}
-	} else return free_node(node);
+		} else ix=0u;
+	}
 
-	return add_node(node), ix;
+	if (ix==0u && (parsed=conditional_expression(node, tokens+ix))) {
+		ix+=parsed;
+	}
+
+	return ix>0u ? (add_node(node), ix) : free_node(node);
 }
 
 static size_t direct_abstract_declarator(struct node_s *parent, struct token_s **tokens)
