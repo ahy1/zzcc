@@ -139,6 +139,8 @@ int main(int argc, char *argv[])
 	//printf(" ====== Nodes (JSON)\n");
 	print_node_json(&root_node, 0);
 
+	putchar('\n');
+
 	/*(void)getchar();*/
 
 	(void)sbfree(sb);
