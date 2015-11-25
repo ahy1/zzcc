@@ -1324,8 +1324,6 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 
 	if ((parsed=identifier(node, tokens+ix))) {
 		ix+=parsed;
-		if (node->in_typedef_declaration) {
-		}
 	} else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
