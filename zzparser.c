@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 
 	(void)sbfree(sb);
 
-	printf("tokens=%d, parsed=%d\n", (int)ntokens, (int)parsed);
+	printf("tokens=%d, parsed=%d\n", (int)ntokens-1, (int)parsed);
 
 	return (ntokens-1u)==parsed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
