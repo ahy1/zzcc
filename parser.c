@@ -1225,17 +1225,13 @@ static size_t type_specifier(struct node_s *parent, struct token_s **tokens)
 	case TT_SIGNED: case TT_UNSIGNED:
 	case TT_BOOL:
 	case TT_COMPLEX:
-		fprintf(stderr, "type_specifier() - Yes this is a type spec. token\n");
-		++ix;
-		break;
+		return add_node(node), 1u;
 	default:
 		if ((parsed=struct_or_union_specifier(node, tokens+ix))
 			|| (parsed=enum_specifier(node, tokens+ix))
-			|| (parsed=typedef_name(node, tokens+ix))) ix+=parsed;
+			|| (parsed=typedef_name(node, tokens+ix))) return add_node(node), parsed;
+		else return free_node(node);
 	}
-
-	if (ix>0u) return add_node(node), ix;
-	else return free_node(node);
 }
 
 static size_t type_qualifier(struct node_s *parent, struct token_s **tokens)
