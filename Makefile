@@ -9,19 +9,23 @@ LDFLAGS=-Wall -g
 
 all: zzparser zzcpp lexer.o
 
-zzcpp: token.o strbuf.o zzcpp.o	dump.o
+zzcpp: token.o strbuf.o zzcpp.o	dump.o json.o
+	$(LD) -o zzcpp $(LDFLAGS) token.o strbuf.o zzcpp.o dump.o json.o
 
-zzcpp.o: zzcpp.c token.h strbuf.h
+zzcpp.o: zzcpp.c token.h strbuf.h json.h
 	$(CC) -o zzcpp.o $(CFLAGS) -c zzcpp.c
 
-zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o
-	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o
+zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o
+	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o
 
 zzparser.o: zzparser.c parser.h token.h strbuf.h parcom.h
 	$(CC) -o zzparser.o $(CFLAGS) -c zzparser.c
 
-parser.o: parser.c parser.h token.h tokenclass.h dump.h
+parser.o: parser.c parser.h token.h tokenclass.h dump.h json.h
 	$(CC) -o parser.o $(CFLAGS) -c parser.c
+
+json.o: json.c json.h
+	$(CC) -o json.o $(CFLAGS) -c json.c
 
 token.o: token.c token.h strbuf.h
 	$(CC) -o token.o $(CFLAGS) -c token.c
@@ -60,4 +64,9 @@ clang:
 
 lint:
 	splint -redef -nestcomment -nullret -mustfreeonly -temptrans -predboolint -mustfreefresh -compdestroy -boolops -nullderef -nullstate -unqualifiedtrans -bufferoverflowhigh -compdef -usereleased -branchstate -mayaliasunique -dependenttrans *.c
+
+.PHONY: check
+
+check:
+	(cd tests; ./runtests.sh)
 
