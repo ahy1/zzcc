@@ -11,7 +11,8 @@ enum {
 	TT_END,			/* Dummy token marking end of stream */
 	TT_ERROR,
 	TT_WHITESPACE, 
-	TT_PREPROCESSOR, 
+	TT_PREPROCESSOR,
+	TT_PREPROCESSOR_CONCAT,
 	TT_TEXTUAL,
 	TT_RETURN,
 	TT_BREAK,

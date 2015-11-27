@@ -42,6 +42,7 @@ static struct define_s *get_define(struct token_s *token)
 	int n;
 
 	for (n=0; n<ndefines; ++n) {
+		fprintf(stderr, " >> get_define() [%s] [%s]\n", token_text(token), token_text(defines[n].name));
 		if (token_text(token) == token_text(defines[n].name)) return &defines[n];
 	}
 
@@ -55,10 +56,14 @@ static void put_token(struct token_s *token)
 	static char b[1024*1024];
 
 	if ((define=get_define(token))) {
+		fprintf(stderr, " **** YES!\n");
 		for (n=0; n<define->nvalues; ++n) {
 			put_token(define->values[n]);
 		}
-	} else printf("[%s]\n", json_str(token_text(token), b, 1024*1024));
+	} else {
+		if (token->type!=TT_WHITESPACE)
+			printf("[%s]\n", json_str(token_text(token), b, 1024*1024));
+	}
 }
 
 static int preprocess_fp(STRBUF *sb, FILE *fp)
@@ -77,13 +82,19 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 
 		switch (mode) {
 		case PPM_NORMAL:
+			fprintf(stderr, "m NORMAL [%s]\n", token_text(token));
 			if (token->type==TT_PREPROCESSOR) {
-				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS) mode=PPM_DIRECTIVE;
+				fprintf(stderr, "tt PREPROCESSOR [%s]\n", token_text(token));
+				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS)
+					mode=PPM_DIRECTIVE;
+			} else if (token->type==TT_PREPROCESSOR_CONCAT) {
+				/* TODO: */
 			} else if (token->type!=TT_WHITESPACE) {
 				put_token(token);
 			}
 			break;
 		case PPM_DIRECTIVE:
+			fprintf(stderr, "m DIRECTIVE [%s]\n", token_text(token));
 			if (!strcmp(text, "include")) mode=PPM_INCLUDE;
 			else if (!strcmp(text, "define")) mode=PPM_DEFINE;
 			else if (!strcmp(text, "if")) mode=PPM_IF;
@@ -102,20 +113,29 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 		case PPM_INCLUDE:
 			break;
 		case PPM_DEFINE:
-			define_name=token;
-			mode=PPM_DEFINE_VALUE;
+			fprintf(stderr, "m DEFINE [%s]\n", token_text(token));
+			if (token->type!=TT_WHITESPACE) {
+				define_name=token;
+				mode=PPM_DEFINE_VALUE;
+			}
 			break;
 		case PPM_DEFINE_VALUE:
+			fprintf(stderr, "m DEFINE_VALUE [%s]\n", token_text(token));
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
+					fprintf(stderr, " -- End of define value\n");
 					defines=realloc(defines, ++ndefines * sizeof defines[0]);
 					defines[ndefines-1].name=define_name;
 					defines[ndefines-1].values=define_values;
 					defines[ndefines-1].nvalues=define_nvalues;
 
+					define_name=NULL;
+					define_values=NULL;
+					define_nvalues=0;
 					mode=PPM_NORMAL;
 				}
 			} else {
+				fprintf(stderr, " -- Define value token\n");
 				define_values=realloc(define_values, ++define_nvalues * sizeof define_values[0]);
 				define_values[define_nvalues-1]=token;
 			}

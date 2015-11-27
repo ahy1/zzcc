@@ -12,6 +12,7 @@ static char *token_type_names[]={
 	"TT_ERROR",
 	"TT_WHITESPACE", 
 	"TT_PREPROCESSOR", 
+	"TT_PREPROCESSOR_CONCAT",
 	"TT_TEXTUAL",
 	"TT_RETURN",
 	"TT_BREAK",
@@ -195,7 +196,8 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 	case '\f':
 		/* Whitespace */
 		token->type=TT_WHITESPACE;
-		token->subtype=WTT_WS;
+		if (ch=='\n') token->subtype=WTT_NEWLINEWS;
+		else token->subtype=WTT_WS;
 		(void)sbput(token->sb, ch);
 		while (isspace((ch=fetch(infp, lno, cno)))) {
 			if (ch=='\n') token->subtype=WTT_NEWLINEWS;
@@ -512,6 +514,14 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 	case ':':
 		token->type=TT_COLON_OP;
 		(void)sbput(token->sb, ch);
+		break;
+	case '#':
+		token->type=TT_PREPROCESSOR;
+		(void)sbput(token->sb, ch);
+		if ((ch=fetch(infp, lno, cno))=='#') {
+			token->type=TT_PREPROCESSOR_CONCAT;
+			(void)sbput(token->sb, ch);
+		} else (void)unfetch(ch, infp,  lno, cno);
 		break;
 	}
 
