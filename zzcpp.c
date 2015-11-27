@@ -43,7 +43,7 @@ static struct define_s *get_define(struct token_s *token)
 
 	for (n=0; n<ndefines; ++n) {
 		fprintf(stderr, " >> get_define() [%s] [%s]\n", token_text(token), token_text(defines[n].name));
-		if (token_text(token) == token_text(defines[n].name)) return &defines[n];
+		if (!strcmp(token_text(token), token_text(defines[n].name))) return &defines[n];
 	}
 
 	return NULL;
