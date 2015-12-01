@@ -101,6 +101,7 @@ enum {
 	TT_REGISTER,
 	TT_SIZEOF,
 	TT_ELIPSIS,
+	TT_INCLUDE,
 };
 
 /* Numeric sub-types */
@@ -144,6 +145,7 @@ struct token_s {
 };
 
 struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno);
+struct token_s *gettoken_include(FILE *infp, STRBUF *sb, int *lno, int *cno);
 int freetoken(struct token_s *token);
 const char *token_text(const struct token_s *token);
 const char *token_fname(const struct token_s *token);

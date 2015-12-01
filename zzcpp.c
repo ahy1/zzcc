@@ -70,14 +70,17 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 {
 	struct token_s start_token={NULL, 0, TT_NULL, 0, 0, NULL, 0, 0};
 	struct token_s *token, *prev_token=&start_token;
-	int rowno=1, colno=0;
+	int lno=1, cno=0;
 	int mode=PPM_NORMAL;
 	const char *text;
 	struct token_s *define_name=NULL;
 	struct token_s **define_values=NULL;
 	int define_nvalues=0;
 
-	while ((token=gettoken(fp, sb, &rowno, &colno))) {
+	while ((token=
+		(mode==PPM_INCLUDE 
+			?gettoken_include(fp, sb, &lno, &cno)
+			:gettoken(fp, sb, &lno, &cno)))) {
 		text=token_text(token);
 
 		switch (mode) {
@@ -85,7 +88,8 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			fprintf(stderr, "m NORMAL [%s]\n", token_text(token));
 			if (token->type==TT_PREPROCESSOR) {
 				fprintf(stderr, "tt PREPROCESSOR [%s]\n", token_text(token));
-				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS)
+				if (prev_token->type==TT_WHITESPACE 
+					&& prev_token->subtype==WTT_NEWLINEWS)
 					mode=PPM_DIRECTIVE;
 			} else if (token->type==TT_PREPROCESSOR_CONCAT) {
 				/* TODO: */
@@ -107,10 +111,21 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			else if (!strcmp(text, "pragma")) mode=PPM_PRAGMA;
 			else if (!strcmp(text, "line")) mode=PPM_LINE;
 			else if (!strcmp(text, "error")) mode=PPM_ERROR;
-			else if (token->type==TT_WHITESPACE && token->subtype!=WTT_NEWLINEWS) continue;
+			else if (token->type==TT_WHITESPACE 
+				&& token->subtype!=WTT_NEWLINEWS) continue;
 			else error("Unknown preprocessor directive\n");
 			break;
 		case PPM_INCLUDE:
+			fprintf(stderr, "m INCLUDE [%s]\n", token_text(token));
+			if (token->type!=TT_WHITESPACE) {
+				/* TODO: Include file */
+
+				/* Find out shich kind of include */
+
+				/* Look up file in configured paths */
+
+				/* Preprocess file */
+			}
 			break;
 		case PPM_DEFINE:
 			fprintf(stderr, "m DEFINE [%s]\n", token_text(token));

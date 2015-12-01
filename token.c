@@ -101,6 +101,7 @@ static char *token_type_names[]={
 	"TT_REGISTER",
 	"TT_SIZEOF",
 	"TT_ELIPSIS",
+	"TT_INCLUDE",
 };
 
 /* << Rewrite for generic lexing 
@@ -521,13 +522,41 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		if ((ch=fetch(infp, lno, cno))=='#') {
 			token->type=TT_PREPROCESSOR_CONCAT;
 			(void)sbput(token->sb, ch);
-		} else (void)unfetch(ch, infp,  lno, cno);
+		} else (void)unfetch(ch, infp, lno, cno);
 		break;
 	}
 
 	(void)sbstop(token->sb);
 
 	return token;
+}
+
+struct token_s *gettoken_include(FILE *infp, STRBUF *sb, int *lno, int *cno)
+{
+	struct token_s *token;
+	int ch;
+
+	if (!(token=(struct token_s *)calloc(1, sizeof *token))) return NULL;
+
+	token->sb=sb;
+	token->sbix=sbix(sb);
+	token->lno=*lno;
+	token->cno=*cno;
+
+	if ((ch=fetch(infp, lno, cno))==EOF) return NULL;
+
+	if (ch=='<') {
+		token->type=TT_INCLUDE;
+		while ((ch=fetch(infp, lno, cno))!='>' && ch!='\n') {
+			(void)sbput(token->sb, ch);
+		}
+		(void)sbstop(token->sb);
+		return token;
+	} else {
+		(void)unfetch(ch, infp, lno, cno);
+		free(token);
+		return gettoken(infp, sb, lno, cno);
+	}
 }
 
 int freetoken(struct token_s *token)
