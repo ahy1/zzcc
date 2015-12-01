@@ -1,14 +1,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "token.h"
 #include "strbuf.h"
 #include "json.h"
 
-static void error(const char *str)
+static int preprocess_file(STRBUF *sb, const char *fname);
+
+static void failure(const char *str)
 {
 	printf("%s", str);
+	exit(EXIT_FAILURE);
+}
+
+static void ffailure(const char *fmt, ...)
+{
+	va_list arg;
+
+	va_start(arg, fmt);
+	vfprintf(stderr, fmt, arg);
+	va_end(arg);
+
 	exit(EXIT_FAILURE);
 }
 
@@ -66,6 +80,25 @@ static void put_token(struct token_s *token)
 	}
 }
 
+static int file_exists(const char *fname)
+{
+    FILE *fp;
+    if ((fp=fopen(fname, "r"))) {
+        fclose(fp);
+        return 1;
+    } else return 0;
+}
+
+static const char *lookup_lib_file(const char *fname)
+{
+	return NULL;
+}
+
+static const char *lookup_project_file(const char *fname)
+{
+	return file_exists(fname) ? fname : NULL;
+}
+
 static int preprocess_fp(STRBUF *sb, FILE *fp)
 {
 	struct token_s start_token={NULL, 0, TT_NULL, 0, 0, NULL, 0, 0};
@@ -76,6 +109,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 	struct token_s *define_name=NULL;
 	struct token_s **define_values=NULL;
 	int define_nvalues=0;
+	const char *fpath;
 
 	while ((token=
 		(mode==PPM_INCLUDE 
@@ -113,18 +147,22 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			else if (!strcmp(text, "error")) mode=PPM_ERROR;
 			else if (token->type==TT_WHITESPACE 
 				&& token->subtype!=WTT_NEWLINEWS) continue;
-			else error("Unknown preprocessor directive\n");
+			else failure("Unknown preprocessor directive\n");
 			break;
 		case PPM_INCLUDE:
 			fprintf(stderr, "m INCLUDE [%s]\n", token_text(token));
 			if (token->type!=TT_WHITESPACE) {
-				/* TODO: Include file */
+				if (token->type==TT_INCLUDE) {
+					if(!(fpath=lookup_lib_file(token_text(token))))
+						ffailure("Can\'t find file %s\n", token_text(token));
+				} else if (token->type==TT_STRING) {
+					if(!(fpath=lookup_project_file(token_text(token))))
+						ffailure("Can\'t find file %s\n", token_text(token));
+				} else failure("Expected include specification\n");
 
-				/* Find out shich kind of include */
+				preprocess_file(sb, fpath);
 
-				/* Look up file in configured paths */
-
-				/* Preprocess file */
+				mode=PPM_NORMAL;
 			}
 			break;
 		case PPM_DEFINE:
