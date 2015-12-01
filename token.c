@@ -283,25 +283,25 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 	case '\"':
 		/* String literal */
 		token->type=TT_STRING;
-		(void)sbput(token->sb, ch);
+		/*(void)sbput(token->sb, ch);*/
 		while ((ch=fetch(infp, lno, cno))!='\"') {
 			if (ch=='\\') {
 				(void)sbput(token->sb, ch);
 				ch=fetch(infp, lno, cno);
-				(void)sbput(token->sb, ch);
 			}
+			(void)sbput(token->sb, ch);
 		}
 		break;
 	case '\'':
 		/* Character literal */
 		token->type=TT_CHARACTER;
-		(void)sbput(token->sb, ch);
+		/*(void)sbput(token->sb, ch);*/
 		while ((ch=fetch(infp, lno, cno))!='\'') {
 			if (ch=='\\') {
 				(void)sbput(token->sb, ch);
 				ch=fetch(infp, lno, cno);
-				(void)sbput(token->sb, ch);
 			}
+			(void)sbput(token->sb, ch);
 		}
 		break;
 	case '+':
