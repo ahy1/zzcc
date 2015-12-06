@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <libgen.h>	/* dirname() */
+#include <limits.h>
 
 #include "token.h"
 #include "strbuf.h"
@@ -89,14 +91,38 @@ static int file_exists(const char *fname)
     } else return 0;
 }
 
-static const char *lookup_lib_file(const char *fname)
+static char *lib_file_paths[]={
+	"/usr/include"
+};
+
+static char *prj_file_paths[]={
+	"."
+};
+
+static const char *lookup_file(size_t npaths, char *paths[], const char *fname)
 {
+	size_t i;
+	static char fpath[PATH_MAX];	/* TODO: Static ok? */
+
+	for (i=0u; i<npaths; ++i) {
+		strcpy(fpath, paths[i]);
+		strcat(fpath, "/");
+		strcat(fpath, fname);	/* TODO: Don't trust PATH_MAX */
+
+		if (file_exists(fpath)) return fpath;	/* TODO: Add path to check */
+	}
+
 	return NULL;
 }
 
-static const char *lookup_project_file(const char *fname)
+static const char *lookup_lib_file(const char *fname)
 {
-	return file_exists(fname) ? fname : NULL;
+	return lookup_file(sizeof lib_file_paths/sizeof lib_file_paths[0], lib_file_paths, fname);
+}
+
+static const char *lookup_prj_file(const char *fname)
+{
+	return lookup_file(sizeof prj_file_paths/sizeof prj_file_paths[0], prj_file_paths, fname);
 }
 
 static int preprocess_fp(STRBUF *sb, FILE *fp)
@@ -156,7 +182,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 					if(!(fpath=lookup_lib_file(token_text(token))))
 						ffailure("Can\'t find file %s\n", token_text(token));
 				} else if (token->type==TT_STRING) {
-					if(!(fpath=lookup_project_file(token_text(token))))
+					if(!(fpath=lookup_prj_file(token_text(token))))
 						ffailure("Can\'t find file %s\n", token_text(token));
 				} else failure("Expected include specification\n");
 
@@ -235,11 +261,16 @@ static int preprocess_file(STRBUF *sb, const char *fname)
 	int ret;
 	FILE *fp;
 
+	fprintf(stderr, "preprocess_file(%s)\n", fname);
+
 	if ((fp=fopen(fname, "r"))) {
 		ret=preprocess_fp(sb, fp);
 		(void)fclose(fp);
 		return ret;
-	} else return -1;
+	} else {
+		ffailure("Can\'t open file %s\n", fname);
+		return -1;
+	}
 }
 
 int main(int argc, char *argv[])
@@ -248,8 +279,11 @@ int main(int argc, char *argv[])
 
 	sb=sballoc(1024);
 
-	if (argc>1) (void)preprocess_file(sb, argv[1]);
-	else (void)preprocess_fp(sb, stdin);
+	if (argc>1) {
+		prj_file_paths[0]=dirname(strdup(argv[1]));
+
+		(void)preprocess_file(sb, argv[1]);
+	} else (void)preprocess_fp(sb, stdin);
 
 	(void)sbfree(sb);
 
