@@ -568,15 +568,15 @@ int freetoken(struct token_s *token)
 
 const char *token_text(const struct token_s *token)
 {
-	if (!token) return "<no-token>";
-	if (!token->sb) return "<no-token-text>";
+	if (!token) return "<NULL>";
+	if (!token->sb) return "<NULL>";
 	return sbcstr(token->sb, token->sbix);
 }
 
 const char *token_fname(const struct token_s *token)
 {
-	if (!token) return "<no-token>";
-	if (!token->fname) return "<no-token-fname>";
+	if (!token) return "<NULL>";
+	if (!token->fname) return "-";
 	return token->fname;
 }
 
