@@ -17,3 +17,5 @@ cpstack.sh
 cpstrbuf.sh
 *.stderr
 *.stdout
+00??-*.c
+00??-*.c.disabled
