@@ -38,6 +38,7 @@ static char *node_type_names[]={
 	"DESIGNATION",
 	"DESIGNATION_INITIALIZER",
 	"INITIALIZER_LIST",
+	"ARGUMENT_EXPRESSION_LIST",
 	"POSTFIX_EXPRESSION",
 	"UNARY_OPERATOR",
 	"CAST_EXPRESSION",
@@ -608,6 +609,7 @@ static size_t specifier_qualifier_list(struct node_s *parent, struct token_s **t
 static size_t abstract_declarator(struct node_s *parent, struct token_s **tokens);
 static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens);
 static size_t type_qualifier(struct node_s *parent, struct token_s **tokens);
+static size_t assignment_expression(struct node_s *parent, struct token_s **tokens);
 
 
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
@@ -782,10 +784,16 @@ static size_t initializer_list(struct node_s *parent, struct token_s **tokens)
 	return separated(parent, tokens, INITIALIZER_LIST, designation_initializer, TT_COMMA_OP);
 }
 
+static size_t argument_expression_list(struct node_s *parent, struct token_s **tokens)
+{
+	return separated(parent, tokens, ARGUMENT_EXPRESSION_LIST, assignment_expression, TT_COMMA_OP);
+}
+
 static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, POSTFIX_EXPRESSION, tokens[0]);
+	int found_postfix;
 
 	if ((parsed=primary_expression(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
@@ -807,12 +815,46 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 		else error_node(node, "[postfix_expression()] Expected closing curly bracket");
-	} else {
-		/* TODO: Handle left-recursive grammar */
-		return free_node(node);
 	}
+      
+	/* The actual postfix part */	
+	if (ix>0u) {
+		found_postfix=1;
 
-	return add_node(node), ix;
+		do {
+			switch(tokens[ix]->type) {
+			case TT_LEFT_SQUARE:
+				++ix;
+				if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+				else error_node(node, "[postfix_expression()] Expected expression");
+				if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
+				else error_node(node, "[postfix_expression()] Expected closing square bracket");
+				break;
+			case TT_LEFT_PARANTHESIS:
+				++ix;
+				if ((parsed=argument_expression_list(node, tokens+ix))) ix+=parsed;
+				if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+				else error_node(node, "[postfix_expression()] Expected closing paranthesis");
+				break;
+			case TT_DOT_OP:
+			case TT_ARROW_OP:
+				++ix;
+				if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
+				else error_node(node, "[postfix_expression()] Expected identifier");
+				break;
+			case TT_PLUSPLUS_OP:
+				++ix;
+				break;
+			case TT_MINUSMINUS_OP:
+				++ix;
+				break;
+			default:
+				found_postfix=0;
+			}
+		} while (found_postfix);
+
+		return add_node(node), ix;
+	} else return free_node(node);
 }
 
 static size_t unary_operator(struct node_s *parent, struct token_s **tokens)
