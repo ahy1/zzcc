@@ -166,6 +166,7 @@ size_t free_node(struct node_s *node)
 	return (size_t)0;
 }
 
+#if 0
 static size_t error_node(struct node_s *node, const char *fmt, ...)
 {
 	va_list arg;
@@ -179,6 +180,7 @@ static size_t error_node(struct node_s *node, const char *fmt, ...)
 
 	return free_node(node);
 }
+#endif
 
 static size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
@@ -362,7 +364,7 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 		++ix;
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[separated()] Unexpexted parse");
+		else error_node_token(node, tokens[ix], "[separated()] Unexpexted parse");
 		fprintf(stderr, "separated() - 2b - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
 	}
 
@@ -395,7 +397,7 @@ static size_t separated_any_token(struct node_s *parent, struct token_s **tokens
 		++ix;
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[separated_any_token()] Unexpexted parse");
+		else error_node_token(node, tokens[ix], "[separated_any_token()] Unexpexted parse");
 	}
 
 	return add_node(node), ix;
@@ -684,13 +686,13 @@ static size_t conditional_expression(struct node_s *parent, struct token_s **tok
 		++ix;
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[conditional_expression()] Expected expression");
+		else error_node_token(node, tokens[ix], "[conditional_expression()] Expected expression");
 
 		if (tokens[ix]->type==TT_COLON_OP) ++ix;
-		else error_node(node, "[conditional_expression()] Expected colon");
+		else error_node_token(node, tokens[ix], "[conditional_expression()] Expected colon");
 
 		if ((parsed=conditional_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[conditional_expression()] Expected conditional-expression");
+		else error_node_token(node, tokens[ix], "[conditional_expression()] Expected conditional-expression");
 	}
 
 	return add_node(node), ix;
@@ -794,15 +796,15 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 		else return free_node(node);
 
 		if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
-		else error_node(node, "[postfix_expression()] Expected opening curly bracket");
+		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected opening curly bracket");
 
 		if ((parsed=initializer_list(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[postfix_expression()] Expected initializer-list");
+		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected initializer-list");
 
 		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
-		else error_node(node, "[postfix_expression()] Expected closing curly bracket");
+		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected closing curly bracket");
 	}
       
 	/* The actual postfix part */	
@@ -814,21 +816,21 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 			case TT_LEFT_SQUARE:
 				++ix;
 				if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-				else error_node(node, "[postfix_expression()] Expected expression");
+				else error_node_token(node, tokens[ix], "[postfix_expression()] Expected expression");
 				if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
-				else error_node(node, "[postfix_expression()] Expected closing square bracket");
+				else error_node_token(node, tokens[ix], "[postfix_expression()] Expected closing square bracket");
 				break;
 			case TT_LEFT_PARANTHESIS:
 				++ix;
 				if ((parsed=separated(node, tokens+ix, ARGUMENT_EXPRESSION_LIST, assignment_expression, TT_COMMA_OP))) ix+=parsed;
 				if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-				else error_node(node, "[postfix_expression()] Expected closing paranthesis");
+				else error_node_token(node, tokens[ix], "[postfix_expression()] Expected closing paranthesis");
 				break;
 			case TT_DOT_OP:
 			case TT_ARROW_OP:
 				++ix;
 				if ((parsed=identifier(node, tokens+ix))) ix+=parsed;
-				else error_node(node, "[postfix_expression()] Expected identifier");
+				else error_node_token(node, tokens[ix], "[postfix_expression()] Expected identifier");
 				break;
 			case TT_PLUSPLUS_OP:
 				++ix;
@@ -904,12 +906,12 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 		++ix;
 		
 		if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[unary_expression()] Expected unary-expression");
+		else error_node_token(node, tokens[ix], "[unary_expression()] Expected unary-expression");
 	} else if ((parsed=unary_operator(node, tokens+ix))) {
 		ix+=parsed;
 
 		if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[unary_expression()] Expected cast-expression");
+		else error_node_token(node, tokens[ix], "[unary_expression()] Expected cast-expression");
 	} else if(tokens[ix]->type==TT_SIZEOF) {
 		++ix;
 
@@ -917,12 +919,12 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 			++ix;
 
 			if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
-			else error_node(node, "[unary_expression()] Expected type-name");
+			else error_node_token(node, tokens[ix], "[unary_expression()] Expected type-name");
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-			else error_node(node, "[unary_expression()] Expected right paranthesis");
+			else error_node_token(node, tokens[ix], "[unary_expression()] Expected right paranthesis");
 		} else if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "[unary_expression()] Expected unary-expression or paranthesized type-name");
+		else error_node_token(node, tokens[ix], "[unary_expression()] Expected unary-expression or paranthesized type-name");
 	}
 
 	return add_node(node), ix;
@@ -940,7 +942,7 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 			++ix;
 
 			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
-			else error_node(node, "[assignment_expression()] Expected assignment-expression");
+			else error_node_token(node, tokens[ix], "[assignment_expression()] Expected assignment-expression");
 		} else ix=0u;
 	}
 
@@ -964,7 +966,7 @@ static size_t direct_abstract_declarator(struct node_s *parent, struct token_s *
 		else return free_node(node);
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected closing paranthesis");
+		else error_node_token(node, tokens[ix], "Expected closing paranthesis");
 	}
 
 	while ((tt=tokens[ix]->type==TT_LEFT_SQUARE) || (tt=tokens[ix]->type==TT_LEFT_PARANTHESIS)) {
@@ -973,16 +975,16 @@ static size_t direct_abstract_declarator(struct node_s *parent, struct token_s *
 		if (tt==TT_LEFT_SQUARE) {
 			if (tokens[ix]->type==TT_STAR_OP) ++ix;
 			else if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
-			else error_node(node, "Expected assignment expression or *");
+			else error_node_token(node, tokens[ix], "Expected assignment expression or *");
 
 			if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
-			else error_node(node, "Expected closing square bracket");
+			else error_node_token(node, tokens[ix], "Expected closing square bracket");
 		} else if (tt==TT_LEFT_PARANTHESIS) {
 			if ((parsed=parameter_type_list(node, tokens+ix))) ix+=parsed;
-			else error_node(node, "Expected parameter type list");
+			else error_node_token(node, tokens[ix], "Expected parameter type list");
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-			else error_node(node, "Expected closing paranthesis");
+			else error_node_token(node, tokens[ix], "Expected closing paranthesis");
 		}	/* No other type is possible */
 	}
 
@@ -1059,7 +1061,7 @@ static size_t struct_declarator(struct node_s *parent, struct token_s **tokens)
 		++ix;
 
 		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected constant-expression");
+		else error_node_token(node, tokens[ix], "Expected constant-expression");
 	}
 
 	if (ix>0u) return add_node(node), ix;
@@ -1104,13 +1106,13 @@ static size_t struct_or_union_specifier(struct node_s *parent, struct token_s **
 		id_or_list=1;
 
 		if ((parsed=many(node, tokens+ix, STRUCT_DECLARATION_LIST, struct_declaration))) ix+=parsed;
-		else error_node(node, "Expected struct declarator list");
+		else error_node_token(node, tokens[ix], "Expected struct declarator list");
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
-		else error_node(node, "Expected right curly brace");
+		else error_node_token(node, tokens[ix], "Expected right curly brace");
 	}
 
-	if (!id_or_list) error_node(node, "Expected struct/union tag name or struct declaration list");
+	if (!id_or_list) error_node_token(node, tokens[ix], "Expected struct/union tag name or struct declaration list");
 
 	return add_node(node), ix;
 }
@@ -1127,7 +1129,7 @@ static size_t enumerator(struct node_s *parent, struct token_s **tokens)
 		++ix;
 	
 		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected constant expression");
+		else error_node_token(node, tokens[ix], "Expected constant expression");
 	}
 
 	return add_node(node), ix;
@@ -1147,15 +1149,15 @@ static size_t enum_specifier(struct node_s *parent, struct token_s **tokens)
 			++ix;
 
 			if ((parsed=separated(node, tokens+ix, ENUMERATOR_LIST, enumerator, TT_COMMA_OP))) ix+=parsed;
-			else error_node(node, "Expected enumerator list");
+			else error_node_token(node, tokens[ix], "Expected enumerator list");
 
 			if (tokens[ix]->type==TT_COMMA_OP) ++ix;
 			
 			if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
-			else error_node(node, "Expected closing brace");
+			else error_node_token(node, tokens[ix], "Expected closing brace");
 		}
 
-		if (ix < 2) error_node(node, "Expected identifier or enumerator list after enum");
+		if (ix < 2) error_node_token(node, tokens[ix], "Expected identifier or enumerator list after enum");
 
 		return add_node(node), ix;
 	} else return free_node(node);
@@ -1289,7 +1291,7 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
 
 			if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
-			else error_node(node, "Expected right square bracket");
+			else error_node_token(node, tokens[ix], "Expected right square bracket");
 		} else {	/* Paranthesis */
 			if ((parsed=parameter_type_list(node, tokens+ix))) ix+=parsed;
 			else if ((parsed=separated(node, tokens+ix, IDENTIFIER_LIST, identifier, TT_COMMA_OP))) ix+=parsed;
@@ -1343,7 +1345,7 @@ static size_t init_declarator(struct node_s *parent, struct token_s **tokens)
 		++ix;
 
 		if ((parsed=initializer(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected initializer");
+		else error_node_token(node, tokens[ix], "Expected initializer");
 	}
 
 	return add_node(node), ix;
@@ -1386,15 +1388,15 @@ static size_t labeled_statement(struct node_s *parent, struct token_s **tokens)
 		++ix;
 
 		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected constant expression after \"case\"");
+		else error_node_token(node, tokens[ix], "Expected constant expression after \"case\"");
 
 		if (tokens[ix]->type==TT_COLON_OP) ++ix;
-		else error_node(node, "Expected colon - : after constant expression in \"case\" statement");
+		else error_node_token(node, tokens[ix], "Expected colon - : after constant expression in \"case\" statement");
 	} else if (tokens[ix]->type==TT_DEFAULT) {
 		++ix;
 
 		if (tokens[ix]->type==TT_COLON_OP) ++ix;
-		else error_node(node, "Expected colon - : after \"default\"");
+		else error_node_token(node, tokens[ix], "Expected colon - : after \"default\"");
 	} else return free_node(node);
 
 	if ((parsed=statement(node, tokens+ix))) ix+=parsed;	/* Made this optional */
@@ -1416,22 +1418,22 @@ static size_t selection_statement(struct node_s *parent, struct token_s **tokens
 		++ix;
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected left paranthesis - ( after if");
+		else error_node_token(node, tokens[ix], "Expected left paranthesis - ( after if");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected condition expression for if statement");
+		else error_node_token(node, tokens[ix], "Expected condition expression for if statement");
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected right paranthesis - ) after condition expression");
+		else error_node_token(node, tokens[ix], "Expected right paranthesis - ) after condition expression");
 
 		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected statement in if statement");
+		else error_node_token(node, tokens[ix], "Expected statement in if statement");
 
 		if (tokens[ix]->type==TT_ELSE) {
 			++ix;
 
 			if ((parsed=statement(node, tokens+ix))) ix+=parsed;
-			else error_node(node, "Expected statement for else clause in if statement");
+			else error_node_token(node, tokens[ix], "Expected statement for else clause in if statement");
 		}
 
 		return add_node(node), ix;
@@ -1439,16 +1441,16 @@ static size_t selection_statement(struct node_s *parent, struct token_s **tokens
 		++ix;
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected left paranthesis - ( after switch");
+		else error_node_token(node, tokens[ix], "Expected left paranthesis - ( after switch");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected condition expression for switch statement");
+		else error_node_token(node, tokens[ix], "Expected condition expression for switch statement");
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected right paranthesis - ) after condition expression");
+		else error_node_token(node, tokens[ix], "Expected right paranthesis - ) after condition expression");
 
 		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected statement in switch statement");
+		else error_node_token(node, tokens[ix], "Expected statement in switch statement");
 
 		return add_node(node), ix;
 	} else return free_node(node);
@@ -1463,60 +1465,60 @@ static size_t iteration_statement(struct node_s *parent, struct token_s **tokens
 		++ix;
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected left paranthesis");
+		else error_node_token(node, tokens[ix], "Expected left paranthesis");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected expression");
+		else error_node_token(node, tokens[ix], "Expected expression");
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected right parantheses");
+		else error_node_token(node, tokens[ix], "Expected right parantheses");
 
 		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected statement");
+		else error_node_token(node, tokens[ix], "Expected statement");
 	} else if (tokens[ix]->type==TT_DO) {
 		++ix;
 
 		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected statement");
+		else error_node_token(node, tokens[ix], "Expected statement");
 
 		if (tokens[ix]->type==TT_WHILE) ++ix;
-		else error_node(node, "Expected \"while\" keyword");
+		else error_node_token(node, tokens[ix], "Expected \"while\" keyword");
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected left paranthesis");
+		else error_node_token(node, tokens[ix], "Expected left paranthesis");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected expression");
+		else error_node_token(node, tokens[ix], "Expected expression");
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected right parantheses");
+		else error_node_token(node, tokens[ix], "Expected right parantheses");
 
 		if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
-		else error_node(node, "Expected semicolon");
+		else error_node_token(node, tokens[ix], "Expected semicolon");
 	} else if (tokens[ix]->type==TT_FOR) {
 		++ix;
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected left paranthesis");
+		else error_node_token(node, tokens[ix], "Expected left paranthesis");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
 		else if ((parsed=declaration(node, tokens+ix))) ix+=parsed;
 
 		if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
-		else error_node(node, "Expected semicolon");
+		else error_node_token(node, tokens[ix], "Expected semicolon");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
 
 		if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
-		else error_node(node, "Expected semicolon");
+		else error_node_token(node, tokens[ix], "Expected semicolon");
 
 		if ((parsed=expression(node, tokens+ix))) ix+=parsed;
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node(node, "Expected right paranthesis");
+		else error_node_token(node, tokens[ix], "Expected right paranthesis");
 
 		if ((parsed=statement(node, tokens+ix))) ix+=parsed;
-		else error_node(node, "Expected statement");
+		else error_node_token(node, tokens[ix], "Expected statement");
 	} else return free_node(node);
 
 	return add_node(node), ix;
@@ -1581,7 +1583,7 @@ static size_t compound_statement(struct node_s *parent, struct token_s **tokens)
 	if ((parsed=many(node, tokens+ix, BLOCK_ITEM_LIST, block_item))) ix+=parsed;
 
 	if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
-	else error_node(node, "Missing right curly brace - } at end of compound statement");
+	else error_node_token(node, tokens[ix], "Missing right curly brace - } at end of compound statement");
 
 	return add_node(node), ix;
 }
