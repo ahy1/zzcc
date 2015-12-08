@@ -432,7 +432,7 @@ static size_t postfix_token(struct node_s *parent, struct token_s **tokens, int 
 
 	fprintf(stderr, "postfix_token() - 1\n");
 
-	if ((parsed=pf(node, tokens))) ix+=parsed;
+	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
 	fprintf(stderr, "postfix_token() - 2 - ix=%d\n", (int)ix);
@@ -464,15 +464,19 @@ static size_t prepostfix_tokens(struct node_s *parent, struct token_s **tokens, 
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[ix]);
 
+	fprintf(stderr, "prepostfix_token() - 1 - ix=%d\n", (int)ix);
 	if (tokens[ix]->type==pre_tt) ++ix;
 	else return free_node(node);
 
-	if ((parsed=pf(node, tokens))) ix+=parsed;
+	fprintf(stderr, "prepostfix_token() - 2 - ix=%d\n", (int)ix);
+	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
+	fprintf(stderr, "prepostfix_token() - 3 - ix=%d\n", (int)ix);
 	if (tokens[ix]->type==post_tt) ++ix;
 	else return free_node(node);
 
+	fprintf(stderr, "prepostfix_token() - 4 - ix=%d\n", (int)ix);
 	return add_node(node), ix;
 }
 
@@ -855,14 +859,23 @@ static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, CAST_EXPRESSION, tokens[0]);
 
-	while (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+	/*
+	 * : unary_expression
+	 * | ( type_name ) cast_expression
+	 */
+
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
-		if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
-		else return free_node(node);
+		if ((parsed=type_name(node, tokens+ix))) {
+			ix+=parsed;
 
-		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-		else error_node_token(node, tokens[ix], "Expected closing paranthesis");
+			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+			else error_node_token(node, tokens[ix], "Expected closing paranthesis");
+
+			if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
+			else error_node_token(node, tokens[ix], "Expected cast expression");
+		} else --ix;
 	}
 
 	if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
@@ -875,6 +888,16 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, UNARY_EXPRESSION, tokens[0]);
+
+	/*
+	 * : postfix_expression
+	 * | ++ unary_expression
+	 * | -- unary_expression
+	 * | unary_operator cast_expression
+	 * | sizeof unary_expression
+	 * | sizeof ( type_name )
+	 * | alignof ( type_name )
+	 */
 
 	if ((parsed=postfix_expression(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_PLUSPLUS_OP || tokens[ix]->type==TT_MINUSMINUS_OP) {
