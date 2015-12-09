@@ -460,7 +460,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		if ((ch=fetch(infp, lno, cno))=='=') {
 			token->type=TT_BIT_AND_ASSIGNMENT_OP;
 			(void)sbput(token->sb, ch);
-		} else if ((ch=fetch(infp, lno, cno))=='&') {
+		} else if (ch=='&') {
 			token->type=TT_AND_OP;
 			(void)sbput(token->sb, ch);
 		} else (void)unfetch(ch, infp, lno, cno);
@@ -479,7 +479,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		if ((ch=fetch(infp, lno, cno))=='=') {
 			token->type=TT_BIT_OR_ASSIGNMENT_OP;
 			(void)sbput(token->sb, ch);
-		} else if ((ch=fetch(infp, lno, cno))=='|') {
+		} else if (ch=='|') {
 			token->type=TT_OR_OP;
 			(void)sbput(token->sb, ch);
 		} else (void)unfetch(ch, infp, lno, cno);
