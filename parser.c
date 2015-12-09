@@ -907,7 +907,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 
 		if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "[unary_expression()] Expected cast-expression");
-	} else if(tokens[ix]->type==TT_SIZEOF) {
+	} else if (tokens[ix]->type==TT_SIZEOF) {
 		++ix;
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
@@ -920,7 +920,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 			else error_node_token(node, tokens[ix], "[unary_expression()] Expected right paranthesis");
 		} else if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "[unary_expression()] Expected unary-expression or paranthesized type-name");
-	}
+	} else return free_node(node);
 
 	return add_node(node), ix;
 }
