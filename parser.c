@@ -938,7 +938,19 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 	if ((parsed=unary_expression(node, tokens+ix))) {
 		ix+=parsed;
 
-		if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
+	/*	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {*/
+		if (is_any_of(tokens[ix]->type, 11, (int []){
+				TT_ASSIGNMENT_OP,
+				TT_STAR_ASSIGNMENT_OP,
+				TT_SLASH_ASSIGNMENT_OP,
+				TT_PERCENT_ASSIGNMENT_OP,
+				TT_PLUS_ASSIGNMENT_OP,
+				TT_MINUS_ASSIGNMENT_OP,
+				TT_LEFTSHIFT_ASSIGNMENT_OP,
+				TT_RIGHTSHIFT_ASSIGNMENT_OP,
+				TT_BIT_AND_ASSIGNMENT_OP,
+				TT_BIT_XOR_ASSIGNMENT_OP,
+				TT_BIT_OR_ASSIGNMENT_OP})) {
 			++ix;
 
 			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
