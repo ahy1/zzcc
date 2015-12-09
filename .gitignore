@@ -19,3 +19,4 @@ cpstrbuf.sh
 *.stdout
 00??-*.c
 00??-*.c.disabled
+test_00??-*.c
