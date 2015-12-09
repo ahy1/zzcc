@@ -1219,7 +1219,8 @@ static size_t declaration_specifiers(struct node_s *parent, struct token_s **tok
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, DECLARATION_SPECIFIERS, tokens[0]);
 
-	while ((parsed=single_token_any_of(parent, tokens+ix, STORAGE_CLASS_SPECIFIER, 5u, (int []){TT_TYPEDEF, TT_EXTERN, TT_STATIC, TT_AUTO, TT_REGISTER}))
+	while ((parsed=single_token_any_of(node, tokens+ix, STORAGE_CLASS_SPECIFIER, 5u, (int []){
+			TT_TYPEDEF, TT_EXTERN, TT_STATIC, TT_AUTO, TT_REGISTER}))
 		|| (parsed=type_specifier(node, tokens+ix))
 		|| (parsed=type_qualifier(node, tokens+ix))
 		|| (parsed=single_token(node, tokens+ix, FUNCTION_SPECIFIER, TT_INLINE))) ix+=parsed;
@@ -1601,7 +1602,6 @@ static size_t function_definition(struct node_s *parent, struct token_s **tokens
 	struct node_s *node=create_node(parent, FUNCTION_DEFINITION, tokens[0]);
 
 	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
 
 	if ((parsed=declarator(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
