@@ -426,22 +426,17 @@ static size_t any_of_2(struct node_s *parent, struct token_s **tokens, int nt,
 	else return free_node(node);
 }
 
-static size_t postfix_token(struct node_s *parent, struct token_s **tokens, int nt,
+static size_t optional_postfix_token(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **), int tt)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	fprintf(stderr, "postfix_token() - 1\n");
-
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
 
-	fprintf(stderr, "postfix_token() - 2 - ix=%d\n", (int)ix);
 	if (tokens[ix]->type==tt) ++ix;
 	else return free_node(node);
 
-	fprintf(stderr, "postfix_token() - 3\n");
 	return add_node(node), ix;
 }
 
@@ -1567,7 +1562,7 @@ static size_t statement(struct node_s *parent, struct token_s **tokens)
 
 	if ((parsed=labeled_statement(node, tokens+ix))
 		|| (parsed=compound_statement(node, tokens+ix))
-		|| (parsed=postfix_token(node, tokens+ix, EXPRESSION_STATEMENT, expression, TT_SEMICOLON_OP))
+		|| (parsed=optional_postfix_token(node, tokens+ix, EXPRESSION_STATEMENT, expression, TT_SEMICOLON_OP))
 		|| (parsed=selection_statement(node, tokens+ix))
 		|| (parsed=iteration_statement(node, tokens+ix))
 		|| (parsed=jump_statement(node, tokens+ix))) return add_node(node), parsed;
