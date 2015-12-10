@@ -348,7 +348,7 @@ static size_t generic_parse_tokensequence(struct node_s *parent, struct token_s 
 
 static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **),
-	int tt_separator)
+	int tt_separator, int opt_end_separator)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[0]);
@@ -364,7 +364,10 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 		++ix;
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
-		else error_node_token(node, tokens[ix], "[separated()] Unexpexted parse");
+		else {
+			if(opt_end_separator) return add_node(node), ix;
+			else error_node_token(node, tokens[ix], "[separated()] Unexpexted parse");
+		}
 		fprintf(stderr, "separated() - 2b - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
 	}
 
@@ -646,27 +649,27 @@ static size_t equality_expression(struct node_s *parent, struct token_s **tokens
 
 static size_t and_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, AND_EXPRESSION, equality_expression, TT_BIT_AND_OP);
+	return separated(parent, tokens, AND_EXPRESSION, equality_expression, TT_BIT_AND_OP, 0u);
 }
 
 static size_t exclusive_or_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, EXCLUSIVE_OR_EXPRESSION, and_expression, TT_BIT_XOR_OP);
+	return separated(parent, tokens, EXCLUSIVE_OR_EXPRESSION, and_expression, TT_BIT_XOR_OP, 0u);
 }
 
 static size_t inclusive_or_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, INCLUSIVE_OR_EXPRESSION, exclusive_or_expression, TT_BIT_OR_OP);
+	return separated(parent, tokens, INCLUSIVE_OR_EXPRESSION, exclusive_or_expression, TT_BIT_OR_OP, 0u);
 }
 
 static size_t logical_and_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, LOGICAL_AND_EXPRESSION, inclusive_or_expression, TT_AND_OP);
+	return separated(parent, tokens, LOGICAL_AND_EXPRESSION, inclusive_or_expression, TT_AND_OP, 0u);
 }
 
 static size_t logical_or_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, LOGICAL_OR_EXPRESSION, logical_and_expression, TT_OR_OP);
+	return separated(parent, tokens, LOGICAL_OR_EXPRESSION, logical_and_expression, TT_OR_OP, 0u);
 }
 
 static size_t conditional_expression(struct node_s *parent, struct token_s **tokens)
@@ -771,7 +774,7 @@ static size_t designation_initializer(struct node_s *parent, struct token_s **to
 
 static size_t initializer_list(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, INITIALIZER_LIST, designation_initializer, TT_COMMA_OP);
+	return separated(parent, tokens, INITIALIZER_LIST, designation_initializer, TT_COMMA_OP, 0u);
 }
 
 static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
@@ -817,7 +820,8 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 				break;
 			case TT_LEFT_PARANTHESIS:
 				++ix;
-				if ((parsed=separated(node, tokens+ix, ARGUMENT_EXPRESSION_LIST, assignment_expression, TT_COMMA_OP))) ix+=parsed;
+				if ((parsed=separated(node, tokens+ix, ARGUMENT_EXPRESSION_LIST, assignment_expression, TT_COMMA_OP, 0u))) 
+					ix+=parsed;
 				if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 				else error_node_token(node, tokens[ix], "[postfix_expression()] Expected closing paranthesis");
 				break;
@@ -1034,7 +1038,7 @@ static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, PARAMETER_TYPE_LIST, tokens[0]);
 
-	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP))) ix+=parsed;
+	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP, 0u))) ix+=parsed;
 	else return free_node(node);
 
 	if (tokens[ix]->type==TT_COMMA_OP) {
@@ -1088,7 +1092,7 @@ static size_t struct_declaration(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node);
 	fprintf(stderr, "struct_declaration() - 2\n");
 
-	if ((parsed=separated(node, tokens+ix, STRUCT_DECLARATOR_LIST, struct_declarator, TT_COMMA_OP))) ix+=parsed;
+	if ((parsed=separated(node, tokens+ix, STRUCT_DECLARATOR_LIST, struct_declarator, TT_COMMA_OP, 0u))) ix+=parsed;
 	else return free_node(node);
 	fprintf(stderr, "struct_declaration() - 3\n");
 
@@ -1157,7 +1161,7 @@ static size_t enum_specifier(struct node_s *parent, struct token_s **tokens)
 		if (tokens[ix]->type==TT_LEFT_CURLY) {
 			++ix;
 
-			if ((parsed=separated(node, tokens+ix, ENUMERATOR_LIST, enumerator, TT_COMMA_OP))) ix+=parsed;
+			if ((parsed=separated(node, tokens+ix, ENUMERATOR_LIST, enumerator, TT_COMMA_OP, 1))) ix+=parsed;
 			else error_node_token(node, tokens[ix], "Expected enumerator list");
 
 			if (tokens[ix]->type==TT_COMMA_OP) ++ix;
@@ -1305,7 +1309,7 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 			else error_node_token(node, tokens[ix], "Expected right square bracket");
 		} else {	/* Paranthesis */
 			if ((parsed=parameter_type_list(node, tokens+ix))) ix+=parsed;
-			else if ((parsed=separated(node, tokens+ix, IDENTIFIER_LIST, identifier, TT_COMMA_OP))) ix+=parsed;
+			else if ((parsed=separated(node, tokens+ix, IDENTIFIER_LIST, identifier, TT_COMMA_OP, 0u))) ix+=parsed;
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 			else return free_node(node);
@@ -1372,7 +1376,7 @@ static size_t declaration(struct node_s *parent, struct token_s **tokens)
 	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	if ((parsed=separated(node, tokens+ix, INIT_DECLARATOR_LIST, init_declarator, TT_COMMA_OP))) ix+=parsed;
+	if ((parsed=separated(node, tokens+ix, INIT_DECLARATOR_LIST, init_declarator, TT_COMMA_OP, 0u))) ix+=parsed;
 
 	if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
 	else return free_node(node); /*error_node(node, "Expected semicolon - ; at end of declaration");*/
@@ -1417,7 +1421,7 @@ static size_t labeled_statement(struct node_s *parent, struct token_s **tokens)
 
 static size_t expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP);
+	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP, 0u);
 }
 
 static size_t selection_statement(struct node_s *parent, struct token_s **tokens)
