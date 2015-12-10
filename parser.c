@@ -595,7 +595,7 @@ static struct op_s *getop(int tt, int arity)
 /* Actual parsers: */
 
 static size_t identifier(struct node_s *parent, struct token_s **tokens);
-static size_t type_specifier(struct node_s *parent, struct token_s **tokens);
+static size_t type_specifier(struct node_s *parent, struct token_s **tokens, int *include_typedef);
 static size_t expression(struct node_s *parent, struct token_s **tokens);
 static size_t statement(struct node_s *parent, struct token_s **tokens);
 static size_t compound_statement(struct node_s *parent, struct token_s **tokens);
@@ -1051,8 +1051,10 @@ static size_t specifier_qualifier_list(struct node_s *parent, struct token_s **t
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, SPECIFIER_QUALIFIER_LIST, tokens[0]);
+	int include_typedef=1;
 
-	while ((parsed=type_specifier(node, tokens+ix)) || (parsed=type_qualifier(node, tokens+ix))) ix+=parsed;
+	while ((parsed=type_specifier(node, tokens+ix, &include_typedef)) || (parsed=type_qualifier(node, tokens+ix)))
+		ix+=parsed;
 
 	return ix>0u ? (add_node(node), ix) : free_node(node);
 }
@@ -1103,7 +1105,7 @@ static size_t struct_or_union_specifier(struct node_s *parent, struct token_s **
 	int id_or_list=0;
 	struct node_s *node=create_node(parent, STRUCT_OR_UNION_SPECIFIER, tokens[0]);
 
-	if ((parsed=single_token_any_of(parent, tokens, STRUCT_OR_UNION, 2u, (int []){TT_STRUCT, TT_UNION}))) ix+=parsed;
+	if ((parsed=single_token_any_of(node, tokens, STRUCT_OR_UNION, 2u, (int []){TT_STRUCT, TT_UNION}))) ix+=parsed;
 	else return free_node(node);
 
 	if ((parsed=identifier(node, tokens+ix))) {ix+=parsed; id_or_list=1;}
@@ -1113,7 +1115,7 @@ static size_t struct_or_union_specifier(struct node_s *parent, struct token_s **
 		id_or_list=1;
 
 		if ((parsed=many(node, tokens+ix, STRUCT_DECLARATION_LIST, struct_declaration))) ix+=parsed;
-		else error_node_token(node, tokens[ix], "Expected struct declarator list");
+		else error_node_token(node, tokens[ix], "Expected struct declaration list");
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 		else error_node_token(node, tokens[ix], "Expected right curly brace");
@@ -1178,7 +1180,7 @@ static size_t typedef_name(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node);
 }
 
-static size_t type_specifier(struct node_s *parent, struct token_s **tokens)
+static size_t type_specifier(struct node_s *parent, struct token_s **tokens, int *include_typedef)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, TYPE_SPECIFIER, tokens[0]);
@@ -1190,11 +1192,11 @@ static size_t type_specifier(struct node_s *parent, struct token_s **tokens)
 	case TT_SIGNED: case TT_UNSIGNED:
 	case TT_BOOL:
 	case TT_COMPLEX:
-		return add_node(node), 1u;
+		return *include_typedef=0, add_node(node), 1u;
 	default:
 		if ((parsed=struct_or_union_specifier(node, tokens+ix))
-			|| (parsed=enum_specifier(node, tokens+ix))
-			|| (parsed=typedef_name(node, tokens+ix))) return add_node(node), parsed;
+			|| (parsed=enum_specifier(node, tokens+ix))) return *include_typedef=0, add_node(node), parsed;
+		else if(*include_typedef && (parsed=typedef_name(node, tokens+ix))) return *include_typedef=0, add_node(node), parsed;
 		else return free_node(node);
 	}
 }
@@ -1218,10 +1220,11 @@ static size_t declaration_specifiers(struct node_s *parent, struct token_s **tok
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, DECLARATION_SPECIFIERS, tokens[0]);
+	int include_typedef=1;
 
 	while ((parsed=single_token_any_of(node, tokens+ix, STORAGE_CLASS_SPECIFIER, 5u, (int []){
 			TT_TYPEDEF, TT_EXTERN, TT_STATIC, TT_AUTO, TT_REGISTER}))
-		|| (parsed=type_specifier(node, tokens+ix))
+		|| (parsed=type_specifier(node, tokens+ix, &include_typedef))
 		|| (parsed=type_qualifier(node, tokens+ix))
 		|| (parsed=single_token(node, tokens+ix, FUNCTION_SPECIFIER, TT_INLINE))) ix+=parsed;
 
