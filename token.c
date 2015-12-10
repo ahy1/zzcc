@@ -100,6 +100,7 @@ static char *token_type_names[]={
 	"TT_AUTO",
 	"TT_REGISTER",
 	"TT_SIZEOF",
+	"TT_ALIGNOF",
 	"TT_ELIPSIS",
 	"TT_INCLUDE",
 };
@@ -251,6 +252,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "auto")) token->type=TT_AUTO;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "register")) token->type=TT_REGISTER;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "sizeof")) token->type=TT_SIZEOF;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Alignof")) token->type=TT_ALIGNOF;
 		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '0':
