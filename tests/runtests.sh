@@ -2,37 +2,45 @@
 
 # Testing C parser
 
+mkdir -p out
+
 for fname in test_*.c; do
+	outfname="out/$fname.stdout"
+	errfname="out/$fname.stderr"
+
 	echo "Testing parser on $fname"
 
-	echo "" >"$fname.stdout"
-	echo "" >"$fname.stderr"
+	echo "" >"$outfname"
+	echo "" >"$errfname"
 
-	../zzparser <"$fname" 2>>"$fname.stderr" >>"$fname.stdout"
+	../zzparser <"$fname" 2>>"$errfname" >>"$outfname"
 	if test $? != 0; then
 		echo " >>> Failed"
 #		break
 	fi
 
-	echo "" >>"$fname.stdout"
-	echo "" >>"$fname.stderr"
+	echo "" >>"$outfname"
+	echo "" >>"$errfname"
 done
 
 # Testing C preprocessor
 
 for fname in testcpp_*.c; do
+	outfname="out/$fname.stdout"
+	errfname="out/$fname.stderr"
+
 	echo "Testing preprocessor on $fname"
 
-	echo "" >"$fname.stdout"
-	echo "" >"$fname.stderr"
+	echo "" >"$outfname"
+	echo "" >"$errfname"
 
-	../zzcpp <"$fname" 2>>"$fname.stderr" >>"$fname.stdout"
+	../zzcpp <"$fname" 2>>"$errfname" >>"$outfname"
 	if test $? != 0; then
 		echo " >>> Failed"
 	fi
 
-	echo "" >>"$fname.stdout"
-	echo "" >>"$fname.stderr"
+	echo "" >>"$outfname"
+	echo "" >>"$errfname"
 done
 
 
