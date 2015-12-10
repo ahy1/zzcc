@@ -918,6 +918,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 			++ix;
 
 			if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
+			else if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;	/* TODO: This is ugly. Refactor! */
 			else error_node_token(node, tokens[ix], "[unary_expression()] Expected type-name");
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
