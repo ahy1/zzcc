@@ -774,7 +774,7 @@ static size_t designation_initializer(struct node_s *parent, struct token_s **to
 
 static size_t initializer_list(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, INITIALIZER_LIST, designation_initializer, TT_COMMA_OP, 0u);
+	return separated(parent, tokens, INITIALIZER_LIST, designation_initializer, TT_COMMA_OP, 1u);
 }
 
 static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
@@ -1351,11 +1351,19 @@ static size_t initializer(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, INITIALIZER, tokens[0]);
 
-	if ((parsed=assignment_expression(node, tokens))) ix+=parsed;
-	else if ((parsed=initializer_list(node, tokens))) {
+	if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
+	else if (tokens[ix]->type==TT_LEFT_CURLY) {
+		++ix;
+
+		if ((parsed=initializer_list(node, tokens+ix))) ix+=parsed;
+		else error_node_token(node, tokens[ix], "Exprected initializer list");
+
+		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
+		else error_node_token(node, tokens[ix], "Expected closing curly brace");
+	/*else if ((parsed=initializer_list(node, tokens+ix))) {
 		ix+=parsed;
 
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
+		if (tokens[ix]->type==TT_COMMA_OP) ++ix;*/
 	} else return free_node(node);
 
 	return add_node(node), ix;
