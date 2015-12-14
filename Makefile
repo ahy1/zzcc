@@ -7,7 +7,7 @@ CFLAGS=-Wall -g
 LD=cc
 LDFLAGS=-Wall -g
 
-all: zzparser zzcpp lexer.o
+all: zzparser zzcpp
 
 zzcpp: token.o strbuf.o zzcpp.o	dump.o json.o
 	$(LD) -o zzcpp $(LDFLAGS) token.o strbuf.o zzcpp.o dump.o json.o
@@ -35,9 +35,6 @@ strbuf.o: strbuf.c strbuf.h
 
 tokenclass.o: tokenclass.c tokenclass.h token.h
 	$(CC) -o tokenclass.o $(CFLAGS) -c tokenclass.c
-
-lexer.o: lexer.c lexer.h
-	$(CC) -o lexer.o $(CFLAGS) -c lexer.c
 
 
 stack.o: stack.c stack.h
