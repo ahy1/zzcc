@@ -1240,7 +1240,7 @@ static size_t struct_or_union_specifier(struct node_s *parent, struct token_s **
 		id_or_list=1;
 
 		if ((parsed=many(node, tokens+ix, STRUCT_DECLARATION_LIST, struct_declaration))) ix+=parsed;
-		else error_node_token(node, tokens[ix], "Expected struct declaration list");
+		/*else error_node_token(node, tokens[ix], "Expected struct declaration list");*/
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 		else error_node_token(node, tokens[ix], "Expected right curly brace");
