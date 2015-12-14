@@ -1204,14 +1204,22 @@ static size_t struct_declaration(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, STRUCT_DECLARATION, tokens[0]);
 
+	LOG_PARSER("Start");
+
 	if ((parsed=specifier_qualifier_list(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
+	LOG_PARSER("Parsed specifier qualifier list");
+
 	if ((parsed=separated(node, tokens+ix, STRUCT_DECLARATOR_LIST, struct_declarator, TT_COMMA_OP, 0u))) ix+=parsed;
-	else return free_node(node);
+	/*else return free_node(node);*/
+
+	LOG_PARSER("Parsed struct declarator list");
 
 	if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
 	else return free_node(node);
+
+	LOG_PARSER("Found semicolon");
 
 	return add_node(node), ix;
 }
