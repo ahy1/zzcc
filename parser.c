@@ -87,6 +87,8 @@ static char *node_type_names[]={
 	"NT_DUMMY"
 };
 
+#define LOG_PARSER(s) fprintf(stderr, " >> %s (%d) >> %s >> ix=%d >> %s\n", __func__, node->level, (s), (int)ix, token_text(tokens[ix]))
+
 struct node_s *g_root_node=NULL;
 
 static void print_token_details(FILE *fp, struct token_s *token)
@@ -218,6 +220,7 @@ static int add_node(struct node_s *node)
 	return 0;
 }
 
+#if 0
 static int add_subnode(struct node_s *node)
 {
 	struct node_s *subnode;
@@ -238,6 +241,7 @@ static int add_subnode(struct node_s *node)
 
 
 }
+#endif
 
 static int add_typealias(struct node_s *node)
 {
@@ -353,25 +357,25 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[0]);
 
-	fprintf(stderr, "separated() - 1 [%s]\n", token_text(tokens[ix]));
+	LOG_PARSER("1");
 
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	fprintf(stderr, "separated() - 2 - ix=%d, [%s]\n", (int)ix, token_text(tokens[ix]));
+	LOG_PARSER("2");
 	while (tokens[ix]->type==tt_separator) {
-		fprintf(stderr, "separated() - 2a - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
 		++ix;
+		LOG_PARSER("2a");
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 		else {
 			if(opt_end_separator) return add_node(node), ix;
 			else error_node_token(node, tokens[ix], "[separated()] Unexpexted parse");
 		}
-		fprintf(stderr, "separated() - 2b - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
+		LOG_PARSER("2b");
 	}
 
-	fprintf(stderr, "separated() - 3 - ix=%d [%s]\n", (int)ix, token_text(tokens[ix]));
+	LOG_PARSER("3");
 	return add_node(node), ix;
 }
 
@@ -464,19 +468,19 @@ static size_t prepostfix_tokens(struct node_s *parent, struct token_s **tokens, 
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[ix]);
 
-	fprintf(stderr, "prepostfix_token() - 1 - ix=%d\n", (int)ix);
+	LOG_PARSER("1");
 	if (tokens[ix]->type==pre_tt) ++ix;
 	else return free_node(node);
 
-	fprintf(stderr, "prepostfix_token() - 2 - ix=%d\n", (int)ix);
+	LOG_PARSER("2");
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	fprintf(stderr, "prepostfix_token() - 3 - ix=%d\n", (int)ix);
+	LOG_PARSER("3");
 	if (tokens[ix]->type==post_tt) ++ix;
 	else return free_node(node);
 
-	fprintf(stderr, "prepostfix_token() - 4 - ix=%d\n", (int)ix);
+	LOG_PARSER("4");
 	return add_node(node), ix;
 }
 
@@ -677,6 +681,8 @@ static size_t conditional_expression(struct node_s *parent, struct token_s **tok
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, CONDITIONAL_EXPRESSION, tokens[0]);
 
+	LOG_PARSER("Start");
+
 	if ((parsed=logical_or_expression(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
@@ -693,6 +699,8 @@ static size_t conditional_expression(struct node_s *parent, struct token_s **tok
 		else error_node_token(node, tokens[ix], "[conditional_expression()] Expected conditional-expression");
 	}
 
+	LOG_PARSER("Returning");
+
 	return add_node(node), ix;
 }
 
@@ -705,7 +713,7 @@ static size_t primary_expression(struct node_s *parent, struct token_s **tokens)
 		|| (parsed=single_token_any_of(node, tokens, CONSTANT, 2, (int []){TT_CHARACTER, TT_NUMBER}))
 		|| (parsed=single_token(node, tokens, STRING_LITERAL, TT_STRING))) return add_node(node), parsed;
 	else if ((parsed=prepostfix_tokens(node, tokens, PRIMARY_EXPRESSION,
-		expression, TT_LEFT_PARANTHESIS, TT_RIGHT_PARANTHESIS))) return add_subnode(node), parsed;
+		expression, TT_LEFT_PARANTHESIS, TT_RIGHT_PARANTHESIS))) return add_node(node), parsed;
 	else return free_node(node);
 }
 
@@ -783,30 +791,46 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 	struct node_s *node=create_node(parent, POSTFIX_EXPRESSION, tokens[0]);
 	int found_postfix;
 
+	LOG_PARSER("Start");
+
 	if ((parsed=primary_expression(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
+		LOG_PARSER("Found left paren");
+
 		if ((parsed=type_name(node, tokens+ix))) ix+=parsed;
 		else return free_node(node);
+
+		LOG_PARSER("Parsed type name");
 
 		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 		else return free_node(node);
 
+		LOG_PARSER("Found right paren");
+
 		if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
 		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected opening curly bracket");
+
+		LOG_PARSER("Found left curly");
 
 		if ((parsed=initializer_list(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected initializer-list");
 
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;
+		LOG_PARSER("Parsed initializer list");
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected closing curly bracket");
+
+		LOG_PARSER("Found right curly");
+
 	}
+
+	LOG_PARSER("Moving on to actual postfix part");
       
 	/* The actual postfix part */	
 	if (ix>0u) {
+		LOG_PARSER("Yes we have parsed something already");
 		found_postfix=1;
 
 		do {
@@ -842,6 +866,7 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 			}
 		} while (found_postfix);
 
+		LOG_PARSER("Returning");
 		return add_node(node), ix;
 	} else return free_node(node);
 }
@@ -865,22 +890,39 @@ static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
 	 * | ( type_name ) cast_expression
 	 */
 
+	LOG_PARSER("start");
+
 	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
+		LOG_PARSER("Found left paren");
 		if ((parsed=type_name(node, tokens+ix))) {
 			ix+=parsed;
+
+			LOG_PARSER("Parsed type name");
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 			else error_node_token(node, tokens[ix], "Expected closing paranthesis");
 
-			if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
-			else error_node_token(node, tokens[ix], "Expected cast expression");
-		} else --ix;
+			LOG_PARSER("Found right paren");
+
+			if ((parsed=cast_expression(node, tokens+ix))) {
+				ix+=parsed;
+				return add_node(node), ix;
+			}
+
+			LOG_PARSER("Gave up (type_name) cast_expression");
+		}
+		LOG_PARSER("No left parenthesis starting ( type_name ) cast_expression");
 	}
+
+	ix=0u;
+	LOG_PARSER("Trying unary_expression");
 
 	if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
+
+	LOG_PARSER("After trying unary_expression");
 
 	return add_node(node), ix;
 }
@@ -900,19 +942,27 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 	 * | alignof ( type_name )
 	 */
 
+	LOG_PARSER("Start");
+
 	if ((parsed=postfix_expression(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_PLUSPLUS_OP || tokens[ix]->type==TT_MINUSMINUS_OP) {
 		++ix;
+
+		LOG_PARSER("Found ++/--");
 		
 		if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "[unary_expression()] Expected unary-expression");
 	} else if ((parsed=unary_operator(node, tokens+ix))) {
 		ix+=parsed;
 
+		LOG_PARSER("Parsed unary operator");
+
 		if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "[unary_expression()] Expected cast-expression");
 	} else if (tokens[ix]->type==TT_SIZEOF) {
 		++ix;
+
+		LOG_PARSER("Found sizeof");
 
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 			++ix;
@@ -928,6 +978,8 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 	} else if (tokens[ix]->type==TT_ALIGNOF) {
 		++ix;
 
+		LOG_PARSER("Found alignof");
+
 		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 			++ix;
 
@@ -939,9 +991,11 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 		} else error_node_token(node, tokens[ix], "[unary_expression()] Expected paranthesized type-name");
 	} else return free_node(node);
 
+	LOG_PARSER("Returning");
+
 	return add_node(node), ix;
 }
-
+#if 0
 static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
@@ -949,6 +1003,8 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 
 	if ((parsed=unary_expression(node, tokens+ix))) {
 		ix+=parsed;
+
+		print_token(" ]]]]] 1. ", tokens[ix]);
 
 	/*	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {*/
 		if (is_any_of(tokens[ix]->type, 11, (int []){
@@ -975,6 +1031,55 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 	}
 
 	return ix>0u ? (add_node(node), ix) : free_node(node);
+}
+#endif
+
+static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, ASSIGNMENT_EXPRESSION, tokens[0]);
+
+	LOG_PARSER("Start");
+
+	if ((parsed=unary_expression(node, tokens+ix))) {
+		ix+=parsed;
+		LOG_PARSER("1");
+
+		if (is_any_of(tokens[ix]->type, 11, (int []){
+				TT_ASSIGNMENT_OP,
+				TT_STAR_ASSIGNMENT_OP,
+				TT_SLASH_ASSIGNMENT_OP,
+				TT_PERCENT_ASSIGNMENT_OP,
+				TT_PLUS_ASSIGNMENT_OP,
+				TT_MINUS_ASSIGNMENT_OP,
+				TT_LEFTSHIFT_ASSIGNMENT_OP,
+				TT_RIGHTSHIFT_ASSIGNMENT_OP,
+				TT_BIT_AND_ASSIGNMENT_OP,
+				TT_BIT_XOR_ASSIGNMENT_OP,
+				TT_BIT_OR_ASSIGNMENT_OP})) {
+			++ix;
+			LOG_PARSER("1a");
+
+			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
+			else error_node_token(node, tokens[ix], 
+					"[assignment_expression()] Expected assignment-expression");
+
+			LOG_PARSER("1b");
+
+			return add_node(node), ix;
+		} else ix=0u;/*return free_node(node);*/
+	} 
+
+	LOG_PARSER("Trying conditional?");
+	
+	if ((parsed=conditional_expression(node, tokens+ix))) {
+		ix+=parsed;
+		LOG_PARSER("Parsed conditional expression");
+	}
+
+	LOG_PARSER("Returning");
+
+	return ix>0u ? add_node(node), ix : free_node(node);
 }
 
 static size_t direct_abstract_declarator(struct node_s *parent, struct token_s **tokens)
@@ -1099,19 +1204,14 @@ static size_t struct_declaration(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, STRUCT_DECLARATION, tokens[0]);
 
-	fprintf(stderr, "struct_declaration() - 1\n");
-
 	if ((parsed=specifier_qualifier_list(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
-	fprintf(stderr, "struct_declaration() - 2\n");
 
 	if ((parsed=separated(node, tokens+ix, STRUCT_DECLARATOR_LIST, struct_declarator, TT_COMMA_OP, 0u))) ix+=parsed;
 	else return free_node(node);
-	fprintf(stderr, "struct_declaration() - 3\n");
 
 	if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
 	else return free_node(node);
-	fprintf(stderr, "struct_declaration() - 4\n");
 
 	return add_node(node), ix;
 }
@@ -1351,20 +1451,26 @@ static size_t initializer(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, INITIALIZER, tokens[0]);
 
+	LOG_PARSER("Start");
+
 	if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
 	else if (tokens[ix]->type==TT_LEFT_CURLY) {
 		++ix;
 
+		LOG_PARSER("Found left curly");
+
 		if ((parsed=initializer_list(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "Exprected initializer list");
 
+		LOG_PARSER("Parsed initializer list");
+
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 		else error_node_token(node, tokens[ix], "Expected closing curly brace");
-	/*else if ((parsed=initializer_list(node, tokens+ix))) {
-		ix+=parsed;
 
-		if (tokens[ix]->type==TT_COMMA_OP) ++ix;*/
+		LOG_PARSER("Founde right curly");
 	} else return free_node(node);
+
+	LOG_PARSER("Returning");
 
 	return add_node(node), ix;
 }
@@ -1374,15 +1480,25 @@ static size_t init_declarator(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, INIT_DECLARATOR, tokens[0]);
 
+	LOG_PARSER("Start");
+
 	if ((parsed=declarator(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
+
+	LOG_PARSER("Parsed declarator");
 
 	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
 		++ix;
 
+		LOG_PARSER("Found assignment op");
+
 		if ((parsed=initializer(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "Expected initializer");
+
+		LOG_PARSER("Parsed initializer");
 	}
+
+	LOG_PARSER("Returning");
 
 	return add_node(node), ix;
 }
