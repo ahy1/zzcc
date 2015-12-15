@@ -107,6 +107,7 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 	va_list arg;
 	int level=node->level;
 
+	fprintf(stderr, "%02d ", level); 
 	print_token_details(stderr, token);
 
 	while(level--) (void)putc(' ', stderr);
@@ -123,6 +124,7 @@ static void log_node(struct node_s *node, const char *fmt, ...)
 	va_list arg;
 	int level=node->level;
 
+	fprintf(stderr, "%02d ", level); 
 	print_token_details(stderr, node->token);
 
 	while(level--) (void)putc(' ', stderr);
