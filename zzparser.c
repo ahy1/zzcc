@@ -89,6 +89,15 @@ void test(const char *module, const char *testcode)
 	else fprintf(stderr, "Unknown module name %s\n", module);
 }
 
+void skip_to_eol(FILE *infp, STRBUF *sb, int *lno, int *cno)
+{
+	struct token_s *token;
+
+	while ((token=gettoken(infp, sb, lno, cno))) {
+		if (token->type==TT_WHITESPACE && token->subtype==WTT_NEWLINEWS) break;
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -122,6 +131,12 @@ int main(int argc, char *argv[])
 
 	while ((token=gettoken(fp, sb, &lno, &cno))) {
 		/* TODO: Handle TT_UNKNOWN as error in the future */
+
+		if (token->type==TT_PREPROCESSOR) {
+			skip_to_eol(fp, sb, &lno, &cno);
+			continue;
+		}
+
 		if (!istobeignored(token) && token->type!=TT_NULL) {
 			//(void)puts(" Added");
 			tokens=(struct token_s **)realloc(tokens, ++ntokens * sizeof *tokens);
