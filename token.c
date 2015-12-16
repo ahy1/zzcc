@@ -101,7 +101,7 @@ static char *token_type_names[]={
 	"TT_REGISTER",
 	"TT_SIZEOF",
 	"TT_ALIGNOF",
-	"TT_ELIPSIS",
+	"TT_ELLIPSIS",
 	"TT_INCLUDE",
 };
 
@@ -256,6 +256,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "enum")) token->type=TT_ENUM;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "inline")) token->type=TT_INLINE;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "__inline")) token->type=TT_INLINE;		/* GNU thing */
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "__inline__")) token->type=TT_INLINE;		/* GNU thing */
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "restrict")) token->type=TT_RESTRICT;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "__restrict")) token->type=TT_RESTRICT;	/* GNU thing */
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "const")) token->type=TT_CONST;
@@ -480,7 +481,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		if ((ch=fetch(infp, lno, cno))=='.') {
 			(void)sbput(token->sb, ch);
 			if ((ch=fetch(infp, lno, cno))=='.') {
-				token->type=TT_ELIPSIS;
+				token->type=TT_ELLIPSIS;
 				(void)sbput(token->sb, ch);
 			} else {
 				(void)unfetch(ch, infp, lno, cno);	/* TODO: Handle case when ".." (not elipsis, just 2 dots) */

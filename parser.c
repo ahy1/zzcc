@@ -1207,7 +1207,7 @@ static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens
 	if (tokens[ix]->type==TT_COMMA_OP) {
 		++ix;
 
-		if (tokens[ix]->type==TT_ELIPSIS) ++ix;
+		if (tokens[ix]->type==TT_ELLIPSIS) ++ix;
 		else return free_node(node);
 	}
 
