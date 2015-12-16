@@ -1145,13 +1145,12 @@ static size_t direct_abstract_declarator(struct node_s *parent, struct token_s *
 		else error_node_token(node, tokens[ix], "Expected closing paranthesis");
 	}
 
-	while ((tt=tokens[ix]->type==TT_LEFT_SQUARE) || (tt=tokens[ix]->type==TT_LEFT_PARANTHESIS)) {
+	while ((tt=tokens[ix]->type)==TT_LEFT_SQUARE || tokens[ix]->type==TT_LEFT_PARANTHESIS) {
 		++ix;
 
 		if (tt==TT_LEFT_SQUARE) {
 			if (tokens[ix]->type==TT_STAR_OP) ++ix;
 			else if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
-			else error_node_token(node, tokens[ix], "Expected assignment expression or *");
 
 			if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
 			else error_node_token(node, tokens[ix], "Expected closing square bracket");
