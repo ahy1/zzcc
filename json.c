@@ -8,11 +8,14 @@
 const char *json_str(const char *str, char *buf, size_t len)
 {
 	size_t ix, bufix=0;
+	size_t sl;
+
+	sl=strlen(str);
 
 	// TODO: Check all bufix>len-n expressions for correctness
-	if (bufix>len-2) return NULL;
+	/*if (bufix>len-2) return NULL;*/
 	buf[bufix++]='"';
-	for (ix=0; ix<strlen(str); ++ix) {
+	for (ix=0; ix<sl; ++ix) {
 		switch (str[ix]) {
 		case '\\':
 		case '\0':
