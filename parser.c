@@ -1443,15 +1443,54 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node);
 }
 
+static size_t attribute(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+
+	if (tokens[ix]->type==TT_TEXTUAL && !strcmp(token_text(tokens[ix]), "__attribute__")) ++ix;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected left paranthesis");
+
+	if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+	else error_node_token(node, tokens[ix], "Expected expression");
+
+	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected right paranthesis");
+
+	/*
+
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected left paranthesis");
+
+	if (tokens[ix]->type==TT_TEXTUAL) ++ix;
+	else error_node_token(node, tokens[ix], "Expected identifier");
+
+	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected right paranthesis");
+	*/
+
+	return add_node(node), ix;
+}
+
+
 static size_t declarator(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, DECLARATOR, tokens[0]);
 
+	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
+
 	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
+
+	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
 
 	if ((parsed=direct_declarator(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
+
+	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
 
 	return add_node(node), ix;
 }
