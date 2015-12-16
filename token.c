@@ -233,6 +233,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "enum")) token->type=TT_ENUM;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "inline")) token->type=TT_INLINE;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "restrict")) token->type=TT_RESTRICT;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "__restrict")) token->type=TT_RESTRICT;	/* Some GNU thing */
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "const")) token->type=TT_CONST;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "volatile")) token->type=TT_VOLATILE;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "void")) token->type=TT_VOID;
