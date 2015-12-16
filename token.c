@@ -176,6 +176,28 @@ static int unfetch(int ch, FILE *fp, int *lno, int *cno)
 	return ungetc(ch, fp);
 }
 
+static int isintsize(int ch)
+{
+	switch(ch) {
+	case 'l': case 'L':
+	case 'u': case 'U':
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static int isfloatsize(int ch)
+{
+	switch(ch) {
+	case 'l': case 'L':
+	case 'f': case 'F':
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 {
 	struct token_s *token;
@@ -266,15 +288,15 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 			token->encoding=NTE_HEX;
 			(void)sbput(token->sb, ch);
 			while(isxdigit((ch=fetch(infp, lno, cno)))) {sbput(token->sb, ch);}
-			(void)unfetch(ch, infp, lno, cno);		// TODO: Check for postfix size specifier
 		} else {
 			token->encoding=NTE_OCTAL;
 			if (isdigit(ch)) {
 				(void)sbput(token->sb, ch);
 				while(isdigit((ch=fetch(infp, lno, cno)))) {sbput(token->sb, ch);}
 			}
-			(void)unfetch(ch, infp, lno, cno);		// TODO: Check for postfix size specifier
 		}
+		while(isintsize(ch)) (void)sbput(token->sb, (ch=fetch(infp, lno, cno)));
+		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 		/* Number */
@@ -284,8 +306,12 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		if (ch=='.') {
 			(void)sbput(token->sb, ch);
 			while (isdigit((ch=fetch(infp, lno, cno)))) {(void)sbput(token->sb, ch);}
-			(void)unfetch(ch, infp, lno, cno);		// TODO: Check for postfix size specifier
-		} else (void)unfetch(ch, infp, lno, cno);	// TODO: Check for postfix size specifier
+			while(isfloatsize(ch)) (void)sbput(token->sb, (ch=fetch(infp, lno, cno)));
+		} else {
+			while(isintsize(ch)) (void)sbput(token->sb, (ch=fetch(infp, lno, cno)));
+		}
+		while(isintsize(ch)) (void)sbput(token->sb, (ch=fetch(infp, lno, cno)));
+		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '\"':
 		/* String literal */
