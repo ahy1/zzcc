@@ -265,6 +265,8 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		if ((ch=fetch(infp, lno, cno))=='x' || ch=='X') {
 			token->encoding=NTE_HEX;
 			(void)sbput(token->sb, ch);
+			while(isxdigit((ch=fetch(infp, lno, cno)))) {sbput(token->sb, ch);}
+			(void)unfetch(ch, infp, lno, cno);		// TODO: Check for postfix size specifier
 		} else {
 			token->encoding=NTE_OCTAL;
 			if (isdigit(ch)) {
