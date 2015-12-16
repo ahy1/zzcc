@@ -91,12 +91,6 @@ static char *node_type_names[]={
 
 struct node_s *g_root_node=NULL;
 
-static void print_token_details(FILE *fp, struct token_s *token)
-{
-	fprintf(fp, "%3d/%2d [%-8s] %-25s", token_lno(token), token_cno(token),
-		token_text(token), token_type(token));
-}
-
 static void print_node_type(FILE *fp, struct node_s *node)
 {
 	fprintf(stderr, "{%-26s}", node_type_names[node->type]); 
@@ -107,8 +101,8 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 	va_list arg;
 	int level=node->level;
 
-	fprintf(stderr, "%02d ", level); 
-	print_token_details(stderr, token);
+	fprintf(stderr, "%02d %3d/%2d [%-8s] %-25s", level, token_lno(token), token_cno(token),
+		token_text(token), token_type(token));
 
 	while(level--) (void)putc(' ', stderr);
 
