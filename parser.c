@@ -245,6 +245,7 @@ static int add_subnode(struct node_s *node)
 }
 #endif
 
+#if 0
 static int add_typealias(struct node_s *node)
 {
 	const char *text=token_text(node->token);
@@ -257,6 +258,27 @@ static int add_typealias(struct node_s *node)
 	node->scope_parent->typealiases[node->scope_parent->ntypealiases-1]=text;
 
 	return 0;
+}
+#endif
+
+
+static int add_typealias_text(struct node_s *scope_parent, const char *text)
+{
+	scope_parent->typealiases=(const char **)realloc(
+		scope_parent->typealiases, ++scope_parent->ntypealiases * sizeof(struct node_s *));
+	scope_parent->typealiases[scope_parent->ntypealiases-1]=text;
+
+	return 0;
+}
+
+static int add_typealias_node(struct node_s *node)
+{
+	const char *text=token_text(node->token);
+
+	log_node(node, "@ add_typealias(): Adding to %s - %s\n", 
+		node_type_names[node->scope_parent->type], text);
+
+	return add_typealias_text(node->scope_parent, text);
 }
 
 static int istypealias(const struct node_s *node, const struct token_s *token)
@@ -1380,7 +1402,7 @@ static size_t identifier(struct node_s *parent, struct token_s **tokens)
 
 	if (tokens[0]->type==TT_TEXTUAL) {
 		if (node->in_typedef_declaration) {
-			add_typealias(node);
+			add_typealias_node(node);
 		}
 
 		return add_node(node), 1u;
@@ -1811,6 +1833,8 @@ static size_t translation_unit(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, TRANSLATION_UNIT, tokens[0]);
+
+	add_typealias_text(node, "__builtin_va_list");
 
 	while ((parsed=any_of_2(node, tokens+ix, EXTERNAL_DECLARATION, function_definition, declaration))) ix+=parsed;
 
