@@ -666,6 +666,29 @@ static size_t attribute(struct node_s *parent, struct token_s **tokens)
 	return add_node(node), ix;
 }
 
+static size_t inline_asm(struct node_s *parent, struct token_s **tokens)
+{
+	size_t ix=0u;
+	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+
+	LOG_PARSER("Start");
+
+	if (tokens[ix]->type==TT_TEXTUAL && !strcmp(token_text(tokens[ix]), "__asm__")) ++ix;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected left paranthesis");
+
+	while (tokens[ix]->type==TT_STRING) ++ix;
+
+	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected right paranthesis");
+
+	LOG_PARSER("Returning");
+
+	return add_node(node), ix;
+}
+
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
 	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, 
@@ -1479,11 +1502,14 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 			if (tokens[ix]->type==TT_RIGHT_SQUARE) ++ix;
 			else error_node_token(node, tokens[ix], "Expected right square bracket");
 		} else {	/* Paranthesis */
-			if ((parsed=parameter_type_list(node, tokens+ix))) ix+=parsed;
-			else if ((parsed=separated(node, tokens+ix, IDENTIFIER_LIST, identifier, TT_COMMA_OP, 0u))) ix+=parsed;
+			if ((parsed=parameter_type_list(node, tokens+ix))) {
+				ix+=parsed;
+			} else if ((parsed=separated(node, tokens+ix, IDENTIFIER_LIST, identifier, TT_COMMA_OP, 0u))) ix+=parsed;
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 			else return free_node(node);
+
+			if ((parsed=inline_asm(node, tokens+ix))) ix+=parsed;	/* GNU __asm__ ( .. ) at end of function decl. */
 		}
 	}
 
