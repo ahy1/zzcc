@@ -147,22 +147,6 @@ size_t free_node(struct node_s *node)
 	return (size_t)0;
 }
 
-#if 0
-static size_t error_node(struct node_s *node, const char *fmt, ...)
-{
-	va_list arg;
-
-	fprintf(stderr, "ERROR (%s): ", node_type_names[node->type]);
-	va_start(arg, fmt);
-	(void)vfprintf(stderr, fmt, arg);
-	va_end(arg);
-
-	exit(EXIT_FAILURE);
-
-	return free_node(node);
-}
-#endif
-
 static size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
 {
 	va_list arg;
@@ -180,13 +164,6 @@ static size_t error_node_token(struct node_s *node, struct token_s *token, const
 	return free_node(node);
 }
 
-#if 0
-static struct node_s *last_subnode(struct node_s *node)
-{
-	return node->nsubnodes>0 ? node->subnodes[node->nsubnodes-1] : NULL;
-}
-#endif
-
 static int add_node(struct node_s *node)
 {
 	log_node_token(node, node->token, "+ add_node(): Adding to %s\n", 
@@ -198,46 +175,6 @@ static int add_node(struct node_s *node)
 
 	return 0;
 }
-
-#if 0
-static int add_subnode(struct node_s *node)
-{
-	struct node_s *subnode;
-
-	if (!(subnode=node->nsubnodes>0 ? node->subnodes[0] : NULL)) {
-		fprintf(stderr, "ERROR: No subnode\n");
-	}
-
-	log_node(node, "+ add_subnode(): Adding subnode of %s to %s - freeing current node\n", 
-		node_type_names[node->type],
-		node_type_names[node->parent->type]);
-
-	subnode->parent=node->parent;
-
-	free(node);
-
-	return add_node(subnode);
-
-
-}
-#endif
-
-#if 0
-static int add_typealias(struct node_s *node)
-{
-	const char *text=token_text(node->token);
-
-	log_node(node, "@ add_typealias(): Adding to %s - %s\n", 
-		node_type_names[node->scope_parent->type], text);
-
-	node->scope_parent->typealiases=(const char **)realloc(
-		node->scope_parent->typealiases, ++node->scope_parent->ntypealiases * sizeof node);
-	node->scope_parent->typealiases[node->scope_parent->ntypealiases-1]=text;
-
-	return 0;
-}
-#endif
-
 
 static int add_typealias_text(struct node_s *scope_parent, const char *text)
 {
@@ -317,37 +254,6 @@ void print_node_json(struct node_s *node, int ind)
 
 	(void)putchar(']');
 }
-
-#if 0
-typedef int (*predicate_t)(const struct token_s *);
-/* Variable arguments should be pairs of type predicate_t and int, terminated by NULL
-   The predicate is the test function. The int indicates if this token identifies the node (non-zero) */
-static size_t generic_parse_tokensequence(struct node_s *parent, struct token_s **tokens,
-	int node_type, ...)
-{
-	size_t ix=0;
-	struct node_s *node=create_node(parent, node_type, NULL);
-	predicate_t pred;
-	int id;
-	va_list argp;
-
-	va_start(argp, node_type);
-
-	while ((pred=va_arg(argp, predicate_t))) {
-		if (pred(tokens[ix])) {
-			if ((id=va_arg(argp, int))) node->token=tokens[ix];
-			++ix;
-		} else break;
-	}
-
-	va_end(argp);
-
-	if (ix>0) return add_node(node), ix;
-	else return free_node(node);
-}
-#endif
-
-/* New approach <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
 /* Helper parsers: */
 
@@ -857,7 +763,6 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 
 		if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
 		else return free_node(node);
-		/*else error_node_token(node, tokens[ix], "[postfix_expression()] Expected opening curly bracket");*/
 
 		LOG_PARSER("Found left curly");
 
@@ -1042,44 +947,6 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 
 	return add_node(node), ix;
 }
-#if 0
-static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
-{
-	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, ASSIGNMENT_EXPRESSION, tokens[0]);
-
-	if ((parsed=unary_expression(node, tokens+ix))) {
-		ix+=parsed;
-
-		print_token(" ]]]]] 1. ", tokens[ix]);
-
-	/*	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {*/
-		if (is_any_of(tokens[ix]->type, 11, (int []){
-				TT_ASSIGNMENT_OP,
-				TT_STAR_ASSIGNMENT_OP,
-				TT_SLASH_ASSIGNMENT_OP,
-				TT_PERCENT_ASSIGNMENT_OP,
-				TT_PLUS_ASSIGNMENT_OP,
-				TT_MINUS_ASSIGNMENT_OP,
-				TT_LEFTSHIFT_ASSIGNMENT_OP,
-				TT_RIGHTSHIFT_ASSIGNMENT_OP,
-				TT_BIT_AND_ASSIGNMENT_OP,
-				TT_BIT_XOR_ASSIGNMENT_OP,
-				TT_BIT_OR_ASSIGNMENT_OP})) {
-			++ix;
-
-			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
-			else error_node_token(node, tokens[ix], "[assignment_expression()] Expected assignment-expression");
-		} else ix=0u;
-	}
-
-	if (ix==0u && (parsed=conditional_expression(node, tokens+ix))) {
-		ix+=parsed;
-	}
-
-	return ix>0u ? (add_node(node), ix) : free_node(node);
-}
-#endif
 
 static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
 {
@@ -1114,7 +981,7 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 			LOG_PARSER("1b");
 
 			return add_node(node), ix;
-		} else ix=0u;/*return free_node(node);*/
+		} else ix=0u;
 	} 
 
 	LOG_PARSER("Trying conditional?");
@@ -1258,7 +1125,6 @@ static size_t struct_declaration(struct node_s *parent, struct token_s **tokens)
 	LOG_PARSER("Parsed specifier qualifier list");
 
 	if ((parsed=separated(node, tokens+ix, STRUCT_DECLARATOR_LIST, struct_declarator, TT_COMMA_OP, 0u))) ix+=parsed;
-	/*else return free_node(node);*/
 
 	LOG_PARSER("Parsed struct declarator list");
 
@@ -1286,7 +1152,6 @@ static size_t struct_or_union_specifier(struct node_s *parent, struct token_s **
 		id_or_list=1;
 
 		if ((parsed=many(node, tokens+ix, STRUCT_DECLARATION_LIST, struct_declaration))) ix+=parsed;
-		/*else error_node_token(node, tokens[ix], "Expected struct declaration list");*/
 
 		if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 		else error_node_token(node, tokens[ix], "Expected right curly brace");
@@ -1458,8 +1323,8 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 			ix+=parsed;
 
 			if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-			else return free_node(node);/*ix=0u;*/
-		} else return free_node(node); /*ix=0u;*/
+			else return free_node(node);
+		} else return free_node(node);
 	}
 
 	while ((tt=tokens[ix]->type)==TT_LEFT_PARANTHESIS || (tt=tokens[ix]->type)==TT_LEFT_SQUARE) {
@@ -1582,7 +1447,7 @@ static size_t declaration(struct node_s *parent, struct token_s **tokens)
 	if ((parsed=separated(node, tokens+ix, INIT_DECLARATOR_LIST, init_declarator, TT_COMMA_OP, 0u))) ix+=parsed;
 
 	if (tokens[ix]->type==TT_SEMICOLON_OP) ++ix;
-	else return free_node(node); /*error_node(node, "Expected semicolon - ; at end of declaration");*/
+	else return free_node(node);
 
 	return add_node(node), ix;
 }
@@ -1847,5 +1712,4 @@ size_t parse(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 
