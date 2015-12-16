@@ -378,6 +378,7 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **),
 	int tt_separator, int opt_end_separator)
 {
+	/* opt_end_separator: 1 => include opt. end sep., 2=> don't include */
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[0]);
 
@@ -393,7 +394,8 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 		else {
-			if(opt_end_separator) return add_node(node), ix;
+			if(opt_end_separator==1) return add_node(node), ix;
+			else if (opt_end_separator==2) return add_node(node), ix-1;
 			else error_node_token(node, tokens[ix], "[separated()] Unexpexted parse");
 		}
 		LOG_PARSER("2b");
@@ -1201,7 +1203,7 @@ static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, PARAMETER_TYPE_LIST, tokens[0]);
 
-	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP, 1u))) ix+=parsed;
+	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP, 2u))) ix+=parsed;
 	else return free_node(node);
 
 	if (tokens[ix]->type==TT_COMMA_OP) {
