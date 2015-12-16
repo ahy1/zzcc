@@ -119,23 +119,6 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 	va_end(arg);
 }
 
-static void log_node(struct node_s *node, const char *fmt, ...)
-{
-	va_list arg;
-	int level=node->level;
-
-	fprintf(stderr, "%02d ", level); 
-	print_token_details(stderr, node->token);
-
-	while(level--) (void)putc(' ', stderr);
-
-	print_node_type(stderr, node);
-
-	va_start(arg, fmt);
-	(void)vfprintf(stderr, fmt, arg);
-	va_end(arg);
-}
-
 struct node_s *create_node(struct node_s *parent, int type, struct token_s *token)
 {
 	struct node_s *node=(struct node_s *)calloc(1, sizeof *node);
@@ -160,7 +143,7 @@ size_t free_node(struct node_s *node)
 {
 	size_t ix;
 
-	log_node(node, "- free_node(): Freeing from %s\n", 
+	log_node_token(node, node->token, "- free_node(): Freeing from %s\n", 
 		node_type_names[node->parent->type]);
 
 	for (ix=0; ix<node->nsubnodes; ++ix) free(node->subnodes[ix]);
@@ -212,7 +195,7 @@ static struct node_s *last_subnode(struct node_s *node)
 
 static int add_node(struct node_s *node)
 {
-	log_node(node, "+ add_node(): Adding to %s\n", 
+	log_node_token(node, node->token, "+ add_node(): Adding to %s\n", 
 		node_type_names[node->parent->type]);
 
 	node->parent->subnodes=(struct node_s **)realloc(
@@ -275,7 +258,7 @@ static int add_typealias_node(struct node_s *node)
 {
 	const char *text=token_text(node->token);
 
-	log_node(node, "@ add_typealias(): Adding to %s - %s\n", 
+	log_node_token(node, node->token, "@ add_typealias(): Adding to %s - %s\n", 
 		node_type_names[node->scope_parent->type], text);
 
 	return add_typealias_text(node->scope_parent, text);
