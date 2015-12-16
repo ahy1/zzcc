@@ -1201,7 +1201,7 @@ static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, PARAMETER_TYPE_LIST, tokens[0]);
 
-	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP, 0u))) ix+=parsed;
+	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP, 1u))) ix+=parsed;
 	else return free_node(node);
 
 	if (tokens[ix]->type==TT_COMMA_OP) {
