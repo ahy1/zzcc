@@ -644,6 +644,26 @@ static size_t type_qualifier(struct node_s *parent, struct token_s **tokens);
 static size_t assignment_expression(struct node_s *parent, struct token_s **tokens);
 
 
+static size_t attribute(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+
+	if (tokens[ix]->type==TT_TEXTUAL && !strcmp(token_text(tokens[ix]), "__attribute__")) ++ix;
+	else return free_node(node);
+
+	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected left paranthesis");
+
+	if ((parsed=expression(node, tokens+ix))) ix+=parsed;
+	else error_node_token(node, tokens[ix], "Expected expression");
+
+	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+	else error_node_token(node, tokens[ix], "Expected right paranthesis");
+
+	return add_node(node), ix;
+}
+
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
 	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, 
@@ -834,7 +854,8 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 		LOG_PARSER("Found right paren");
 
 		if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
-		else error_node_token(node, tokens[ix], "[postfix_expression()] Expected opening curly bracket");
+		else return free_node(node);
+		/*else error_node_token(node, tokens[ix], "[postfix_expression()] Expected opening curly bracket");*/
 
 		LOG_PARSER("Found left curly");
 
@@ -1371,11 +1392,14 @@ static size_t declaration_specifiers(struct node_s *parent, struct token_s **tok
 	struct node_s *node=create_node(parent, DECLARATION_SPECIFIERS, tokens[0]);
 	int include_typedef=1;
 
+	/* TODO: Cleanup and update to C11 */
+
 	while ((parsed=single_token_any_of(node, tokens+ix, STORAGE_CLASS_SPECIFIER, 5u, (int []){
 			TT_TYPEDEF, TT_EXTERN, TT_STATIC, TT_AUTO, TT_REGISTER}))
 		|| (parsed=type_specifier(node, tokens+ix, &include_typedef))
 		|| (parsed=type_qualifier(node, tokens+ix))
-		|| (parsed=single_token(node, tokens+ix, FUNCTION_SPECIFIER, TT_INLINE))) ix+=parsed;
+		|| (parsed=single_token(node, tokens+ix, FUNCTION_SPECIFIER, TT_INLINE))
+		|| (parsed=attribute(node, tokens+ix))) ix+=parsed;
 
 	if (ix>0u) return add_node(node), ix;
 	else return free_node(node);
@@ -1464,39 +1488,6 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 	if(ix>0u) return add_node(node), ix;
 	else return free_node(node);
 }
-
-static size_t attribute(struct node_s *parent, struct token_s **tokens)
-{
-	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
-
-	if (tokens[ix]->type==TT_TEXTUAL && !strcmp(token_text(tokens[ix]), "__attribute__")) ++ix;
-	else return free_node(node);
-
-	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-	else error_node_token(node, tokens[ix], "Expected left paranthesis");
-
-	if ((parsed=expression(node, tokens+ix))) ix+=parsed;
-	else error_node_token(node, tokens[ix], "Expected expression");
-
-	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-	else error_node_token(node, tokens[ix], "Expected right paranthesis");
-
-	/*
-
-	if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
-	else error_node_token(node, tokens[ix], "Expected left paranthesis");
-
-	if (tokens[ix]->type==TT_TEXTUAL) ++ix;
-	else error_node_token(node, tokens[ix], "Expected identifier");
-
-	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
-	else error_node_token(node, tokens[ix], "Expected right paranthesis");
-	*/
-
-	return add_node(node), ix;
-}
-
 
 static size_t declarator(struct node_s *parent, struct token_s **tokens)
 {
