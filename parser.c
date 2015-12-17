@@ -87,7 +87,8 @@ static char *node_type_names[]={
 	"NT_DUMMY"
 };
 
-#define LOG_PARSER(s) fprintf(stderr, " >> %s (%d) >> %s >> ix=%d >> %s\n", __func__, node->level, (s), (int)ix, token_text(tokens[ix]))
+/*#define LOG_PARSER(s) fprintf(stderr, " >> %s (%d) >> %s >> ix=%d >> %s\n", __func__, node->level, (s), (int)ix, token_text(tokens[ix]))*/
+#define LOG_PARSER(s) 
 
 struct node_s *g_root_node=NULL;
 
@@ -365,15 +366,21 @@ static size_t separated_any_token(struct node_s *parent, struct token_s **tokens
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, nt, tokens[0]);
+	int separator_cnt=0;
 
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
 	while (is_any_of(tokens[ix]->type, num_separators, tt_separators)) {
 		++ix;
+		++separator_cnt;
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
-		else error_node_token(node, tokens[ix], "[separated_any_token()] Unexpexted parse");
+		else {
+			if (separator_cnt>1) return add_node(node), ix-1;
+			else return free_node(node);
+		}
+		/*else error_node_token(node, tokens[ix], "[separated_any_token()] Unexpexted parse");*/
 	}
 
 	return add_node(node), ix;
