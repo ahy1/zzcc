@@ -3,9 +3,9 @@
 
 
 CC=cc
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -pg
 LD=cc
-LDFLAGS=-Wall -g
+LDFLAGS=-Wall -g -pg
 
 all: zzparser zzcpp
 
