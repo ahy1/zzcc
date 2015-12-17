@@ -204,6 +204,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 {
 	struct token_s *token;
 	int ch;
+	const char *s;
 
 	if (!(token=(struct token_s *)calloc(1, sizeof *token))) return NULL;
 
@@ -241,48 +242,50 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		(void)sbput(token->sb, ch);
 		while (isalnum((ch=fetch(infp, lno, cno))) || ch=='_') {(void)sbput(token->sb, ch);}
 
-		if (!strcmp(sbcstr(token->sb, token->sbix), "return")) token->type=TT_RETURN;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "break")) token->type=TT_BREAK;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "continue")) token->type=TT_CONTINUE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "goto")) token->type=TT_GOTO;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "if")) token->type=TT_IF;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "else")) token->type=TT_ELSE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "while")) token->type=TT_WHILE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "do")) token->type=TT_DO;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "for")) token->type=TT_FOR;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "switch")) token->type=TT_SWITCH;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "case")) token->type=TT_CASE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "default")) token->type=TT_DEFAULT;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "struct")) token->type=TT_STRUCT;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "union")) token->type=TT_UNION;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "enum")) token->type=TT_ENUM;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "inline")) token->type=TT_INLINE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "__inline")) token->type=TT_INLINE;		/* GNU thing */
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "__inline__")) token->type=TT_INLINE;		/* GNU thing */
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Noreturn")) token->type=TT_NORETURN;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "restrict")) token->type=TT_RESTRICT;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "__restrict")) token->type=TT_RESTRICT;	/* GNU thing */
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "const")) token->type=TT_CONST;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "volatile")) token->type=TT_VOLATILE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "void")) token->type=TT_VOID;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "char")) token->type=TT_CHAR;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "short")) token->type=TT_SHORT;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "int")) token->type=TT_INT;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "long")) token->type=TT_LONG;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "float")) token->type=TT_FLOAT;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "double")) token->type=TT_DOUBLE;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "signed")) token->type=TT_SIGNED;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "unsigned")) token->type=TT_UNSIGNED;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Bool")) token->type=TT_BOOL;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Complex")) token->type=TT_COMPLEX;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "typedef")) token->type=TT_TYPEDEF;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "extern")) token->type=TT_EXTERN;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "static")) token->type=TT_STATIC;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "auto")) token->type=TT_AUTO;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "register")) token->type=TT_REGISTER;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "sizeof")) token->type=TT_SIZEOF;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Alignof")) token->type=TT_ALIGNOF;
-		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Alignas")) token->type=TT_ALIGNAS;
+		s=sbcstr(token->sb, token->sbix);
+
+		if (!strcmp(s, "return")) token->type=TT_RETURN;
+		else if (!strcmp(s, "break")) token->type=TT_BREAK;
+		else if (!strcmp(s, "continue")) token->type=TT_CONTINUE;
+		else if (!strcmp(s, "goto")) token->type=TT_GOTO;
+		else if (!strcmp(s, "if")) token->type=TT_IF;
+		else if (!strcmp(s, "else")) token->type=TT_ELSE;
+		else if (!strcmp(s, "while")) token->type=TT_WHILE;
+		else if (!strcmp(s, "do")) token->type=TT_DO;
+		else if (!strcmp(s, "for")) token->type=TT_FOR;
+		else if (!strcmp(s, "switch")) token->type=TT_SWITCH;
+		else if (!strcmp(s, "case")) token->type=TT_CASE;
+		else if (!strcmp(s, "default")) token->type=TT_DEFAULT;
+		else if (!strcmp(s, "struct")) token->type=TT_STRUCT;
+		else if (!strcmp(s, "union")) token->type=TT_UNION;
+		else if (!strcmp(s, "enum")) token->type=TT_ENUM;
+		else if (!strcmp(s, "inline")) token->type=TT_INLINE;
+		else if (!strcmp(s, "__inline")) token->type=TT_INLINE;		/* GNU thing */
+		else if (!strcmp(s, "__inline__")) token->type=TT_INLINE;		/* GNU thing */
+		else if (!strcmp(s, "_Noreturn")) token->type=TT_NORETURN;
+		else if (!strcmp(s, "restrict")) token->type=TT_RESTRICT;
+		else if (!strcmp(s, "__restrict")) token->type=TT_RESTRICT;	/* GNU thing */
+		else if (!strcmp(s, "const")) token->type=TT_CONST;
+		else if (!strcmp(s, "volatile")) token->type=TT_VOLATILE;
+		else if (!strcmp(s, "void")) token->type=TT_VOID;
+		else if (!strcmp(s, "char")) token->type=TT_CHAR;
+		else if (!strcmp(s, "short")) token->type=TT_SHORT;
+		else if (!strcmp(s, "int")) token->type=TT_INT;
+		else if (!strcmp(s, "long")) token->type=TT_LONG;
+		else if (!strcmp(s, "float")) token->type=TT_FLOAT;
+		else if (!strcmp(s, "double")) token->type=TT_DOUBLE;
+		else if (!strcmp(s, "signed")) token->type=TT_SIGNED;
+		else if (!strcmp(s, "unsigned")) token->type=TT_UNSIGNED;
+		else if (!strcmp(s, "_Bool")) token->type=TT_BOOL;
+		else if (!strcmp(s, "_Complex")) token->type=TT_COMPLEX;
+		else if (!strcmp(s, "typedef")) token->type=TT_TYPEDEF;
+		else if (!strcmp(s, "extern")) token->type=TT_EXTERN;
+		else if (!strcmp(s, "static")) token->type=TT_STATIC;
+		else if (!strcmp(s, "auto")) token->type=TT_AUTO;
+		else if (!strcmp(s, "register")) token->type=TT_REGISTER;
+		else if (!strcmp(s, "sizeof")) token->type=TT_SIZEOF;
+		else if (!strcmp(s, "_Alignof")) token->type=TT_ALIGNOF;
+		else if (!strcmp(s, "_Alignas")) token->type=TT_ALIGNAS;
 		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '0':
