@@ -80,6 +80,9 @@ static char *node_type_names[]={
 	"DECLARATION_LIST",
 	"LABELED_STATEMENT",
 
+	"NT_NON_STANDARD_ATTRIBUTE",
+	"NT_NON_STANDARD_ASM",
+
 	"NT_ANY",
 
 	"NT_ROOT",
@@ -215,6 +218,11 @@ size_t free_node(struct node_s *node)
 	nodefree(node);
 
 	return (size_t)0;
+}
+
+static void set_node_token(struct node_s *node, struct token_s *token)
+{
+	node->token=token;
 }
 
 static size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
@@ -618,7 +626,7 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 static size_t attribute(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+	struct node_s *node=create_node(parent, NT_NON_STANDARD_ATTRIBUTE, tokens[0]);
 
 	if (tokens[ix]->type==TT_TEXTUAL && !strcmp(token_text(tokens[ix]), "__attribute__")) ++ix;
 	else return free_node(node);
@@ -632,13 +640,13 @@ static size_t attribute(struct node_s *parent, struct token_s **tokens)
 	if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 	else error_node_token(node, tokens[ix], "Expected right paranthesis");
 
-	return add_node(node), ix;
+	return /*add_node(node), */ix;
 }
 
 static size_t inline_asm(struct node_s *parent, struct token_s **tokens)
 {
 	size_t ix=0u;
-	struct node_s *node=create_node(parent, NT_ANY, tokens[0]);
+	struct node_s *node=create_node(parent, NT_NON_STANDARD_ASM, tokens[0]);
 
 	LOG_PARSER("Start");
 
@@ -655,7 +663,7 @@ static size_t inline_asm(struct node_s *parent, struct token_s **tokens)
 
 	LOG_PARSER("Returning");
 
-	return add_node(node), ix;
+	return /*add_node(node), */ix;
 }
 
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
@@ -1040,6 +1048,11 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 	struct node_s *node=create_mergeable_node(parent, ASSIGNMENT_EXPRESSION, tokens[0]);
 
 	LOG_PARSER("Start");
+
+	/* Skip attribute to avoid parsing it as assignment expression */
+	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
+
+	set_node_token(node, tokens[ix]);
 
 	if ((parsed=unary_expression(node, tokens+ix))) {
 		ix+=parsed;
@@ -1454,6 +1467,8 @@ static size_t declarator(struct node_s *parent, struct token_s **tokens)
 	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
 
 	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
+
+	set_node_token(node, tokens[ix]);
 
 	if ((parsed=direct_declarator(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);

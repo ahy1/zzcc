@@ -79,6 +79,9 @@ enum {
 	DECLARATION_LIST,
 	LABELED_STATEMENT,
 
+	NT_NON_STANDARD_ATTRIBUTE,	/* GNU */
+	NT_NON_STANDARD_ASM,		/* GNU */
+
 	NT_ANY,		/* Placeholder until real enum has been created */
 
 	NT_ROOT,	/* Used by zzparser.c */
@@ -92,6 +95,7 @@ struct node_s {
 	int type;
 	int subtype;			/* For operators, the token type is here */
 	int level;			/* Level in syntax three */
+	int mergeable;			/* If this node should be merged with subnode in case of only one subnode */
 	int in_typedef_declaration;	/* Indicates that this node is part of typedef declaration */
 	struct token_s *token;		/* (optional) Token identifying data for this node */
 	struct node_s **subnodes;
