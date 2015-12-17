@@ -80,6 +80,7 @@ static char *token_type_names[]={
 	"TT_UNION",
 	"TT_ENUM",
 	"TT_INLINE",
+	"TT_NORETURN",
 	"TT_RESTRICT",
 	"TT_CONST",
 	"TT_VOLATILE",
@@ -101,6 +102,7 @@ static char *token_type_names[]={
 	"TT_REGISTER",
 	"TT_SIZEOF",
 	"TT_ALIGNOF",
+	"TT_ALIGNAS",
 	"TT_ELLIPSIS",
 	"TT_INCLUDE",
 };
@@ -257,6 +259,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "inline")) token->type=TT_INLINE;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "__inline")) token->type=TT_INLINE;		/* GNU thing */
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "__inline__")) token->type=TT_INLINE;		/* GNU thing */
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Noreturn")) token->type=TT_NORETURN;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "restrict")) token->type=TT_RESTRICT;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "__restrict")) token->type=TT_RESTRICT;	/* GNU thing */
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "const")) token->type=TT_CONST;
@@ -279,6 +282,7 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "register")) token->type=TT_REGISTER;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "sizeof")) token->type=TT_SIZEOF;
 		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Alignof")) token->type=TT_ALIGNOF;
+		else if (!strcmp(sbcstr(token->sb, token->sbix), "_Alignas")) token->type=TT_ALIGNAS;
 		(void)unfetch(ch, infp, lno, cno);
 		break;
 	case '0':

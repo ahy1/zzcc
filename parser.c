@@ -65,6 +65,7 @@ static char *node_type_names[]={
 	"TYPE_QUALIFIER",
 	"TYPE_QUALIFIER_LIST",
 	"FUNCTION_SPECIFIER",
+	"ALIGNMENT_SPECIFIER",
 	"DECLARATION_SPECIFIERS",
 	"POINTER",
 	"DIRECT_DECLARATOR",
@@ -1346,6 +1347,38 @@ static size_t type_qualifier(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node);
 }
 
+static size_t function_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	struct node_s *node=create_node(parent, FUNCTION_SPECIFIER, tokens[0]);
+
+	return is_any_of(tokens[0]->type, 2, (int []){TT_INLINE, TT_NORETURN})
+			? add_node(node), 1u
+			: free_node(node);
+
+}
+
+static size_t alignment_specifier(struct node_s *parent, struct token_s **tokens)
+{
+	size_t parsed, ix=0; 
+	struct node_s *node=create_node(parent, ALIGNMENT_SPECIFIER, tokens[0]);
+
+	if (tokens[ix]->type==TT_ALIGNOF) {
+		++ix;
+
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) ++ix;
+		else error_node_token(node, tokens[ix], "Expected opening paranthesis");
+
+		if ((parsed=type_name(node, tokens+ix))
+				|| (parsed=constant_expression(node, tokens+ix))) ix+=parsed;
+		else error_node_token(node, tokens[ix], "Expected type name or constant expression");
+
+		if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+		else error_node_token(node, tokens[ix], "Expected closing paranthesis");
+
+		return add_node(node), ix;
+	} else return free_node(node);
+}
+
 static size_t type_qualifier_list(struct node_s *parent, struct token_s **tokens)
 {
 	return many(parent, tokens, TYPE_QUALIFIER_LIST, type_qualifier, 0);
@@ -1363,7 +1396,9 @@ static size_t declaration_specifiers(struct node_s *parent, struct token_s **tok
 			TT_TYPEDEF, TT_EXTERN, TT_STATIC, TT_AUTO, TT_REGISTER}))
 		|| (parsed=type_specifier(node, tokens+ix, &include_typedef))
 		|| (parsed=type_qualifier(node, tokens+ix))
+		|| (parsed=function_specifier(node, tokens+ix))
 		|| (parsed=single_token(node, tokens+ix, FUNCTION_SPECIFIER, TT_INLINE))
+		|| (parsed=alignment_specifier(node, tokens+ix))
 		|| (parsed=attribute(node, tokens+ix))) ix+=parsed;
 
 	if (ix>0u) return add_node(node), ix;
