@@ -113,9 +113,63 @@ static void log_node_token(struct node_s *node, struct token_s *token, const cha
 	va_end(arg);
 }
 
+#define log_node_token(a, b, c, ...)
+
+#define NODE_SETS_ALLOC
+#define NODE_SET_SIZE 16
+
+struct nodeset_s {
+	struct node_s nodes[NODE_SET_SIZE];
+	size_t nnodes;
+};
+
+STACK *nodesets=NULL;
+
+static struct node_s *nodealloc(void)
+{
+#ifdef NODE_SETS_ALLOC
+	struct nodeset_s *nodeset;
+
+	if (!nodesets) {
+		nodesets=stackalloc(1u);
+		nodeset=(struct nodeset_s *)calloc(1, sizeof *nodeset);
+		stackpush(nodesets, (void *)nodeset);
+	} else nodeset=(struct nodeset_s *)stacktop(nodesets);
+
+	if (nodeset->nnodes >= NODE_SET_SIZE) {
+		nodeset=(struct nodeset_s *)calloc(1, sizeof *nodeset);
+		stackpush(nodesets, (void *)nodeset);
+	}
+
+	return &nodeset->nodes[nodeset->nnodes++];
+#else
+	struct node_s *node=(struct node_s *)calloc(1, sizeof *node);
+
+	if (!node) {
+		fprintf(stderr, "ERROR: Out of memory\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return node;
+#endif
+}
+
+static void nodefree(struct node_s *node)
+{
+#ifdef NODE_SETS_ALLOC
+	struct nodeset_s *nodeset;
+
+	nodeset=(struct nodeset_s *)stacktop(nodesets);
+
+	if (nodeset->nnodes > 0u) --nodeset->nnodes;	/* TODO: Handle empty nodeset? */
+#else
+	free(node);
+#endif
+}
+
 struct node_s *create_node(struct node_s *parent, int type, struct token_s *token)
 {
-	struct node_s *node=(struct node_s *)calloc(1, sizeof *node);
+	struct node_s *node=nodealloc();
 	if (!node) return NULL;
 
 	node->parent=parent;
@@ -140,9 +194,15 @@ size_t free_node(struct node_s *node)
 	log_node_token(node, node->token, "- free_node(): Freeing from %s\n", 
 		node_type_names[node->parent->type]);
 
-	for (ix=0; ix<node->nsubnodes; ++ix) free(node->subnodes[ix]);
+	if (node->parent 
+			&& node->parent->nsubnodes > 0u
+			&& node->parent->subnodes[node->parent->nsubnodes]==node) {
+		--node->parent->nsubnodes;
+	}
 
-	free(node);
+	for (ix=0; ix<node->nsubnodes; ++ix) nodefree(node->subnodes[ix]);
+
+	nodefree(node);
 
 	return (size_t)0;
 }
