@@ -7,6 +7,7 @@
 #include "strbuf.h"
 #include "parser.h"
 #include "parcom.h"
+#include "node.h"
 
 void test_int(const char *name, int expected, int actual)
 {

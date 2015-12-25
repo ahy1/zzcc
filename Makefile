@@ -15,14 +15,20 @@ zzcpp: token.o strbuf.o zzcpp.o	dump.o json.o
 zzcpp.o: zzcpp.c token.h strbuf.h json.h
 	$(CC) -o zzcpp.o $(CFLAGS) -c zzcpp.c
 
-zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o
-	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o
+zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o expression.o node.o
+	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o expression.o node.o
 
-zzparser.o: zzparser.c parser.h token.h strbuf.h parcom.h
+zzparser.o: zzparser.c parser.h token.h strbuf.h parcom.h node.h
 	$(CC) -o zzparser.o $(CFLAGS) -c zzparser.c
 
-parser.o: parser.c parser.h token.h tokenclass.h dump.h json.h
+parser.o: parser.c parser.h token.h tokenclass.h dump.h expression.h node.h
 	$(CC) -o parser.o $(CFLAGS) -c parser.c
+
+node.o: node.c node.h stack.h json.h
+	$(CC) -o node.o $(CFLAGS) -c node.c
+
+expression.o: expression.c expression.h node.h
+	$(CC) -o expression.o $(CFLAGS) -c expression.c
 
 json.o: json.c json.h
 	$(CC) -o json.o $(CFLAGS) -c json.c
