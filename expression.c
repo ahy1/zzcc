@@ -124,6 +124,7 @@ size_t Xexpression(struct node_s *parent, struct token_s **tokens)
 			op=getop(tokens[ix]->type, ARITY_BINARY);
 			if (!op) op=getop(tokens[ix]->type, ARITY_RIGHT_UNARY);
 			if (!op) op=getop(tokens[ix]->type, ARITY_GROUPING_END);
+			if (!op) op=getop(tokens[ix]->type, ARITY_TRINARY); /* TODO: Handle trinary operator */
 		}
 		
 		if(op) {	/* Operator found */
