@@ -99,18 +99,6 @@ static struct op_s *getop(int tt, int arity)
 
 	return NULL;
 }
-/*
-int isop(int tt)
-{	size_t i;
-
-	for (i=0; i<sizeof ops/sizeof ops[0]; ++i) {
-		if (tt==ops[i].tt) return 1;
-	}
-
-	return 0;
-
-}
-*/
 
 void PUSH_RPN(struct token_s *token)
 {
