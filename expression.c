@@ -1,11 +1,20 @@
 
-#include "token.h"
-#include "node.h"
-
 #include "expression.h"
 
+#include "tokenclass.h"
+#include "stack.h"
+
 enum {ASSOC_NONE=0, ASSOC_LEFT, ASSOC_RIGHT};
-enum {ARITY_NONE=0, ARITY_LEFT_UNARY, ARITY_RIGHT_UNARY, ARITY_BINARY, ARITY_TRINARY, ARITY_GROUPING, ARITY_GROUPING_END};
+enum {
+	ARITY_NONE=0, 
+	ARITY_LEFT_UNARY, 
+	ARITY_RIGHT_UNARY, 
+	ARITY_BINARY, 
+	ARITY_TRINARY, 
+	ARITY_GROUPING, 
+	ARITY_GROUPING_END
+};
+
 struct op_s {
 	int tt, sec_tt;		/* sec_tt is token type for second operator in trinary operator */
 	int prec;		/* High number means higher precedence */
@@ -90,32 +99,61 @@ static struct op_s *getop(int tt, int arity)
 
 	return NULL;
 }
+/*
+int isop(int tt)
+{	size_t i;
 
+	for (i=0; i<sizeof ops/sizeof ops[0]; ++i) {
+		if (tt==ops[i].tt) return 1;
+	}
 
-/*static*/ size_t Xexpression(struct node_s *parent, struct token_s **tokens)
+	return 0;
+
+}
+*/
+
+void PUSH_RPN(struct token_s *token)
+{
+	/* Do nothing for now */
+}
+
+size_t Xexpression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t /*parsed, */ix=0u;
 	struct node_s *node=create_node(parent, EXPRESSION, tokens[0]);
 	int done=0;
-	struct op_s start_op={.tt=0, .prec=1000, .assoc=ASSOC_NONE, .arity=ARITY_GROUPING};
 	struct op_s value={.tt=0, .prec=1000, .assoc=ASSOC_NONE, .arity=ARITY_GROUPING_END};
-	struct op_s *op, *prev_op=&start_op;
-	int arity;
+	struct op_s *op;
+	STACK *op_stack;
+
+	op_stack=stackalloc(16u);
 
 	while (!done) {
-		if (prev_op->arity==ARITY_BINARY || prev_op->arity==ARITY_GROUPING)
-			arity=ARITY_LEFT_UNARY;
-		else arity=ARITY_BINARY;
+		if (ix==0u || (isop(tokens[ix-1u]) && tokens[ix-1u]->type!=TT_RIGHT_PARANTHESIS)) {
+			op=getop(tokens[ix]->type, ARITY_LEFT_UNARY);
+		} else {
+			op=getop(tokens[ix]->type, ARITY_BINARY);
+			if (!op) op=getop(tokens[ix]->type, ARITY_RIGHT_UNARY);
+		}
 		
-		if((op=getop(tokens[ix]->type, arity))) {	/* Operator found */
+		if(op) {	/* Operator found */
+			if (op->assoc==ASSOC_RIGHT) {
+				while (stacksize(op_stack) > 0u
+						&& op->prec < ((struct op_s *)stacktop(op_stack))->prec)
+					PUSH_RPN(stackpop(op_stack));
+			} else {
+				while (stacksize(op_stack) > 0u
+						&& op->prec <= ((struct op_s *)stacktop(op_stack))->prec)
+					PUSH_RPN(stackpop(op_stack));
+			}
+			stackpush(op_stack, op);
 
 		} else {					/* No operator found */
 			op=&value;
 		}
-		/* TODO: Handle right unary */
-
-		prev_op=op;
 	}
+
+	stackfree(op_stack);
 
 	return free_node(node);
 }
