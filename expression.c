@@ -119,9 +119,11 @@ size_t Xexpression(struct node_s *parent, struct token_s **tokens)
 	while (!done) {
 		if (ix==0u || (isop(tokens[ix-1u]) && tokens[ix-1u]->type!=TT_RIGHT_PARANTHESIS)) {
 			op=getop(tokens[ix]->type, ARITY_LEFT_UNARY);
+			if (!op) op=getop(tokens[ix]->type, ARITY_GROUPING);
 		} else {
 			op=getop(tokens[ix]->type, ARITY_BINARY);
 			if (!op) op=getop(tokens[ix]->type, ARITY_RIGHT_UNARY);
+			if (!op) op=getop(tokens[ix]->type, ARITY_GROUPING_END);
 		}
 		
 		if(op) {	/* Operator found */
