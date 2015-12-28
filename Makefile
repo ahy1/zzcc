@@ -27,7 +27,7 @@ parser.o: parser.c parser.h token.h tokenclass.h dump.h expression.h node.h
 node.o: node.c node.h stack.h json.h
 	$(CC) -o node.o $(CFLAGS) -c node.c
 
-expression.o: expression.c expression.h node.h token.h tokenclass.h
+expression.o: expression.c expression.h node.h token.h tokenclass.h parser.h
 	$(CC) -o expression.o $(CFLAGS) -c expression.c
 
 json.o: json.c json.h

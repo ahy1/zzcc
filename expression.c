@@ -3,6 +3,7 @@
 
 #include "tokenclass.h"
 #include "stack.h"
+#include "parser.h"
 
 enum {ASSOC_NONE=0, ASSOC_LEFT, ASSOC_RIGHT};
 enum {
@@ -107,7 +108,7 @@ void PUSH_RPN(struct token_s *token)
 
 size_t Xexpression(struct node_s *parent, struct token_s **tokens)
 {
-	size_t /*parsed, */ix=0u;
+	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, EXPRESSION, tokens[0]);
 	int done=0;
 	struct op_s value={.tt=0, .prec=1000, .assoc=ASSOC_NONE, .arity=ARITY_GROUPING_END};
@@ -117,6 +118,17 @@ size_t Xexpression(struct node_s *parent, struct token_s **tokens)
 	op_stack=stackalloc(16u);
 
 	while (!done) {
+		/* Using general parser for casts for now */
+		if (tokens[ix]->type==TT_LEFT_PARANTHESIS) {
+			++ix;
+			if ((parsed=type_name(node, tokens+ix))) {
+				ix+=parsed;
+				if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
+				else error_node_token(node, tokens[ix], "Expected closing paranthesis");
+			} else --ix;
+		}
+
+		/* Find out which operator if any */
 		if (ix==0u || (isop(tokens[ix-1u]) && tokens[ix-1u]->type!=TT_RIGHT_PARANTHESIS)) {
 			op=getop(tokens[ix]->type, ARITY_LEFT_UNARY);
 			if (!op) op=getop(tokens[ix]->type, ARITY_GROUPING);

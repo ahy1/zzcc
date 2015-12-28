@@ -349,7 +349,7 @@ static size_t primary_expression(struct node_s *parent, struct token_s **tokens)
 	else return free_node(node);
 }
 
-static size_t type_name(struct node_s *parent, struct token_s **tokens)
+size_t type_name(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
 	struct node_s *node=create_node(parent, TYPE_NAME, tokens[0]);
