@@ -17,7 +17,7 @@ static void failure(const char *str)
 	exit(EXIT_FAILURE);
 }
 
-static void ffailure(const char *fmt, ...)
+static void failuref(const char *fmt, ...)
 {
 	va_list arg;
 
@@ -180,10 +180,10 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			if (token->type!=TT_WHITESPACE) {
 				if (token->type==TT_INCLUDE) {
 					if(!(fpath=lookup_lib_file(token_text(token))))
-						ffailure("Can\'t find file %s\n", token_text(token));
+						failuref("Can\'t find file %s\n", token_text(token));
 				} else if (token->type==TT_STRING) {
 					if(!(fpath=lookup_prj_file(token_text(token))))
-						ffailure("Can\'t find file %s\n", token_text(token));
+						failuref("Can\'t find file %s\n", token_text(token));
 				} else failure("Expected include specification\n");
 
 				preprocess_file(sb, fpath);
@@ -268,7 +268,7 @@ static int preprocess_file(STRBUF *sb, const char *fname)
 		(void)fclose(fp);
 		return ret;
 	} else {
-		ffailure("Can\'t open file %s\n", fname);
+		failuref("Can\'t open file %s\n", fname);
 		return -1;
 	}
 }
