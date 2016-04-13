@@ -7,7 +7,7 @@
 
 
 
-static char *node_type_names[]={
+static const char *node_type_names[]={
 	"TRANSLATION_UNIT",
 	"EXTERNAL_DECLARATION",
 	"FUNCTION_DEFINITION",
