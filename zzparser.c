@@ -17,6 +17,14 @@ void test_int(const char *name, int expected, int actual)
 	else printf("   FAILED: Expected %d, got %d\n", expected, actual);
 }
 
+void test_ulong(const char *name, size_t expected, size_t actual)
+{
+	printf("  [%s]\n", name);
+
+	if (expected==actual) puts("   OK");
+	else printf("   FAILED: Expected %lu, got %lu\n", expected, actual);
+}
+
 void test_parcom(const char *testcode)
 {
 	int found=0;
@@ -30,29 +38,29 @@ void test_parcom(const char *testcode)
 		found=1;
 		puts(" keyword (int)");
 		parser=keyword("int");
-		test_int("int i;\\n", 3, do_parse(parser, "int i;\n", 0));
-		test_int("int", 3, do_parse(parser, "int", 0));
-		test_int("integer", 0, do_parse(parser, "integer", 0));
+		test_ulong("int i;\\n", 3, do_parse(parser, "int i;\n", 0));
+		test_ulong("int", 3, do_parse(parser, "int", 0));
+		test_ulong("integer", 0, do_parse(parser, "integer", 0));
 	}
 	
 	if (!strcmp(testcode, "pattern-1") || !strcmp(testcode, "ALL")) {
 		found=1;
 		puts(" pattern ([:ident:][:idnum:]*)");
 		parser=pattern("[:ident:][:idnum:]*");
-		test_int("a", 1, do_parse(parser, "a", 0));
-		test_int("aa", 2, do_parse(parser, "aa", 0));
-		test_int("1aa", 0, do_parse(parser, "1aa", 0));
-		test_int("a1aa", 4, do_parse(parser, "a1aa", 0));
+		test_ulong("a", 1, do_parse(parser, "a", 0));
+		test_ulong("aa", 2, do_parse(parser, "aa", 0));
+		test_ulong("1aa", 0, do_parse(parser, "1aa", 0));
+		test_ulong("a1aa", 4, do_parse(parser, "a1aa", 0));
 	}
 	
 	if (!strcmp(testcode, "pattern-2") || !strcmp(testcode, "ALL")) {
 		found=1;
 		puts(" pattern ( *)");
 		parser=pattern(" *");
-		test_int(" ", 1, do_parse(parser, " ", 0));
-		test_int("  ", 2, do_parse(parser, "  ", 0));
-		test_int("   ", 3, do_parse(parser, "   ", 0));
-		test_int(" .  ", 1, do_parse(parser, " .  ", 0));
+		test_ulong(" ", 1, do_parse(parser, " ", 0));
+		test_ulong("  ", 2, do_parse(parser, "  ", 0));
+		test_ulong("   ", 3, do_parse(parser, "   ", 0));
+		test_ulong(" .  ", 1, do_parse(parser, " .  ", 0));
 	}
 	
 	if (!strcmp(testcode, "sequence") || !strcmp(testcode, "ALL")) {
@@ -62,9 +70,9 @@ void test_parcom(const char *testcode)
 			pattern(" *"), 
 			pattern("[:digit:]"), 
 			NULL);
-		test_int("a 3", 3, do_parse(parser,"a 3", 0));
-		test_int("a  3", 4, do_parse(parser,"a  3", 0));
-		test_int("a1  3", 5, do_parse(parser,"a1  3", 0));
+		test_ulong("a 3", 3, do_parse(parser,"a 3", 0));
+		test_ulong("a  3", 4, do_parse(parser,"a  3", 0));
+		test_ulong("a1  3", 5, do_parse(parser,"a1  3", 0));
 	}
 
 	if (!strcmp(testcode, "Choice") || !strcmp(testcode, "ALL")) {
@@ -73,9 +81,9 @@ void test_parcom(const char *testcode)
 		parser=choice(pattern("[:ident:][:idnum:]*"),
 			pattern("[:digit:]*"),
 			NULL);
-		test_int("a1", 2, do_parse(parser, "a1", 0));
-		test_int("99", 2, do_parse(parser, "99", 0));
-		test_int("##", 0, do_parse(parser, "##", 0));
+		test_ulong("a1", 2, do_parse(parser, "a1", 0));
+		test_ulong("99", 2, do_parse(parser, "99", 0));
+		test_ulong("##", 0, do_parse(parser, "##", 0));
 	}
 	
 	if (!found) fprintf(stderr, "Unknown test code %s\n", testcode);
