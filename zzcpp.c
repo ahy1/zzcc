@@ -51,7 +51,7 @@ struct define_s {
 };
 
 struct define_s *defines=NULL;
-int ndefines=0;
+size_t ndefines=0;
 
 static struct define_s *get_define(struct token_s *token)
 {
