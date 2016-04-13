@@ -9,15 +9,17 @@
 #include "parcom.h"
 #include "node.h"
 
-void test_int(const char *name, int expected, int actual)
+#if 0
+static void test_int(const char *name, int expected, int actual)
 {
 	printf("  [%s]\n", name);
 
 	if (expected==actual) puts("   OK");
 	else printf("   FAILED: Expected %d, got %d\n", expected, actual);
 }
+#endif
 
-void test_ulong(const char *name, size_t expected, size_t actual)
+static void test_ulong(const char *name, size_t expected, size_t actual)
 {
 	printf("  [%s]\n", name);
 
@@ -25,7 +27,7 @@ void test_ulong(const char *name, size_t expected, size_t actual)
 	else printf("   FAILED: Expected %lu, got %lu\n", expected, actual);
 }
 
-void test_parcom(const char *testcode)
+static void test_parcom(const char *testcode)
 {
 	int found=0;
 	struct parser_s *parser;
@@ -90,7 +92,7 @@ void test_parcom(const char *testcode)
 
 }
 
-void test(const char *module, const char *testcode)
+static void test(const char *module, const char *testcode)
 {
 	if (!module) {	/* Test all */
 		test_parcom(testcode);
@@ -98,7 +100,7 @@ void test(const char *module, const char *testcode)
 	else fprintf(stderr, "Unknown module name %s\n", module);
 }
 
-void skip_to_eol(FILE *infp, STRBUF *sb, int *lno, int *cno)
+static void skip_to_eol(FILE *infp, STRBUF *sb, int *lno, int *cno)
 {
 	struct token_s *token;
 
