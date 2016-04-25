@@ -42,7 +42,9 @@ enum {PPM_NORMAL,
 	PPM_UNDEF,
 	PPM_PRAGMA,
 	PPM_LINE,
-	PPM_ERROR};
+	PPM_ERROR,
+	PPM_SKIP_EOL
+};
 
 struct define_s {
 	struct token_s *name;
@@ -66,6 +68,27 @@ static struct define_s *get_define(struct token_s *token)
 	}
 
 	return NULL;
+}
+
+static void push_conditional(int v)
+{
+	conditionals=realloc(conditionals, ++nconditionals * sizeof *conditionals);
+	conditionals[nconditionals-1u]=v;
+}
+
+static int top_conditional(void)
+{
+	return nconditionals > 0u ? conditionals[nconditionals-1u] : 1;	/* Empty stack means true */
+}
+
+static int pop_conditional(void)
+{
+	if (nconditionals < 1u) {
+		fprintf(stderr, "Conditional stack empty\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return conditionals[--nconditionals];
 }
 
 static void put_token(struct token_s *token)
@@ -192,7 +215,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 
 				preprocess_file(sb, fpath);
 
-				mode=PPM_NORMAL;
+				mode=PPM_SKIP_EOL;
 			}
 			break;
 		case PPM_DEFINE:
@@ -228,38 +251,49 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_IFDEF:
 			fprintf(stderr, "m IFDEF [%s]\n", token_text(token));
-			if (get_define(token)) {
-				fprintf(stderr, "m IFDEF [%s] Found it\n", token_text(token));
-				/* TODO: Push true */
-			} else {
-				fprintf(stderr, "m IFDEF [%s] Didn\'t find it\n", token_text(token));
-				/* TODO: Push false */
+			if (token->type!=TT_WHITESPACE) {
+				if (get_define(token)) {
+					fprintf(stderr, "m IFDEF [%s] Found it\n", token_text(token));
+					push_conditional(1);
+				} else {
+					fprintf(stderr, "m IFDEF [%s] Didn\'t find it\n", token_text(token));
+					push_conditional(0);
+				}
+				mode=PPM_SKIP_EOL;
 			}
 			break;
 		case PPM_IFNDEF:
 			fprintf(stderr, "m IFNDEF [%s]\n", token_text(token));
-			if (get_define(token)) {
-				fprintf(stderr, "m IFNDEF [%s] Found it\n", token_text(token));
-				/* TODO: Push false */
-			} else {
-				fprintf(stderr, "m IFNDEF [%s] Didn\'t find it\n", token_text(token));
-				/* TODO: Push true */
+			if (token->type!=TT_WHITESPACE) {
+				if (get_define(token)) {
+					fprintf(stderr, "m IFNDEF [%s] Found it\n", token_text(token));
+					push_conditional(0);
+				} else {
+					fprintf(stderr, "m IFNDEF [%s] Didn\'t find it\n", token_text(token));
+					push_conditional(1);
+				}
+				mode=PPM_SKIP_EOL;
 			}
 			break;
 		case PPM_ELSE:
-			/* TODO: Pop, then push opposite */
+			push_conditional(!pop_conditional());
+			mode=PPM_SKIP_EOL;
 			break;
 		case PPM_ELIF:
-			/* TODO: Pop, then push expression && opposite */
+			/* TODO: Pop, then push opposite && expression */
 			break;
 		case PPM_ENDIF:
-			/* TODO: Pop */
+			pop_conditional();
+			mode=PPM_SKIP_EOL;
 			break;
 		case PPM_UNDEF:
-			for (ix=0; ix<ndefines; ++ix) {
-				if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
-					defines[ndefines].name=NULL;
+			if (token->type!=TT_WHITESPACE) {
+				for (ix=0; ix<ndefines; ++ix) {
+					if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
+						defines[ndefines].name=NULL;
+					}
 				}
+				mode=PPM_SKIP_EOL;
 			}
 			break;
 		case PPM_PRAGMA:
@@ -269,6 +303,16 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 		case PPM_ERROR:
 			fprintf(stderr, "ERROR: %s\n", token_text(token));
 			exit(EXIT_FAILURE);
+		case PPM_SKIP_EOL:
+			if (token->type==TT_WHITESPACE) {
+				if (token->subtype==WTT_NEWLINEWS) {
+					fprintf(stderr, " -- End of directive\n");
+					mode=PPM_NORMAL;
+				}
+			} else {
+				fprintf(stderr, "Unexpected tokens at end of directive\n");
+			}
+			break;
 		default:
 			if (token->type==TT_PREPROCESSOR) {
 				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS) mode=PPM_DIRECTIVE;
