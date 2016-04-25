@@ -53,6 +53,9 @@ struct define_s {
 struct define_s *defines=NULL;
 size_t ndefines=0;
 
+int *conditionals=NULL;
+size_t nconditionals=0;
+
 static struct define_s *get_define(struct token_s *token)
 {
 	int n;
@@ -225,29 +228,21 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_IFDEF:
 			fprintf(stderr, "m IFDEF [%s]\n", token_text(token));
-			define_name=NULL;
-			for (ix=0; ix<ndefines; ++ix) {
-				if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
-					define_name=defines[ndefines].name;
-					/* TODO: Push true */
-					break;
-				}
-			}
-			if (!define_name) {
+			if (get_define(token)) {
+				fprintf(stderr, "m IFDEF [%s] Found it\n", token_text(token));
+				/* TODO: Push true */
+			} else {
+				fprintf(stderr, "m IFDEF [%s] Didn\'t find it\n", token_text(token));
 				/* TODO: Push false */
 			}
 			break;
 		case PPM_IFNDEF:
 			fprintf(stderr, "m IFNDEF [%s]\n", token_text(token));
-			define_name=NULL;
-			for (ix=0; ix<ndefines; ++ix) {
-				if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
-					define_name=defines[ndefines].name;
-					/* TODO: Push false */
-					break;
-				}
-			}
-			if (!define_name) {
+			if (get_define(token)) {
+				fprintf(stderr, "m IFNDEF [%s] Found it\n", token_text(token));
+				/* TODO: Push false */
+			} else {
+				fprintf(stderr, "m IFNDEF [%s] Didn\'t find it\n", token_text(token));
 				/* TODO: Push true */
 			}
 			break;
