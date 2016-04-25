@@ -136,6 +136,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 	struct token_s **define_values=NULL;
 	int define_nvalues=0;
 	const char *fpath;
+	size_t ix;
 
 	while ((token=
 		(mode==PPM_INCLUDE 
@@ -220,25 +221,59 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_IF:
+			/* TODO: Push expression */
 			break;
 		case PPM_IFDEF:
+			fprintf(stderr, "m IFDEF [%s]\n", token_text(token));
+			define_name=NULL;
+			for (ix=0; ix<ndefines; ++ix) {
+				if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
+					define_name=defines[ndefines].name;
+					/* TODO: Push true */
+					break;
+				}
+			}
+			if (!define_name) {
+				/* TODO: Push false */
+			}
 			break;
 		case PPM_IFNDEF:
+			fprintf(stderr, "m IFNDEF [%s]\n", token_text(token));
+			define_name=NULL;
+			for (ix=0; ix<ndefines; ++ix) {
+				if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
+					define_name=defines[ndefines].name;
+					/* TODO: Push false */
+					break;
+				}
+			}
+			if (!define_name) {
+				/* TODO: Push true */
+			}
 			break;
 		case PPM_ELSE:
+			/* TODO: Pop, then push opposite */
 			break;
 		case PPM_ELIF:
+			/* TODO: Pop, then push expression && opposite */
 			break;
 		case PPM_ENDIF:
+			/* TODO: Pop */
 			break;
 		case PPM_UNDEF:
+			for (ix=0; ix<ndefines; ++ix) {
+				if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
+					defines[ndefines].name=NULL;
+				}
+			}
 			break;
 		case PPM_PRAGMA:
 			break;
 		case PPM_LINE:
 			break;
 		case PPM_ERROR:
-			break;
+			fprintf(stderr, "ERROR: %s\n", token_text(token));
+			exit(EXIT_FAILURE);
 		default:
 			if (token->type==TT_PREPROCESSOR) {
 				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS) mode=PPM_DIRECTIVE;
