@@ -56,7 +56,8 @@ struct define_s *defines=NULL;
 size_t ndefines=0;
 
 int *conditionals=NULL;
-size_t nconditionals=0;
+size_t nconditionals=0u;
+size_t ninnerconditionals=0u;
 
 static struct define_s *get_define(struct token_s *token)
 {
@@ -276,6 +277,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_ELSE:
+			fprintf(stderr, "m ELSE [%s]\n", token_text(token));
 			push_conditional(!pop_conditional());
 			mode=PPM_SKIP_EOL;
 			break;
@@ -306,11 +308,13 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 		case PPM_SKIP_EOL:
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
-					fprintf(stderr, " -- End of directive\n");
+					fprintf(stderr, " -- End of directive [%s]\n", token_text(token));
 					mode=PPM_NORMAL;
+				} else {
+					fprintf(stderr, " Some whitespace [%s]\n", token_text(token));
 				}
 			} else {
-				fprintf(stderr, "Unexpected tokens at end of directive\n");
+				fprintf(stderr, "Unexpected tokens at end of directive [%s]\n", token_text(token));
 			}
 			break;
 		default:
