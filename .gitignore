@@ -3,6 +3,7 @@
 *.js
 *.swp
 *.out
+*.notes
 *~
 Debug/
 1
