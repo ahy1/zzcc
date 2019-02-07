@@ -7,12 +7,14 @@
 *.vim
 *~
 Debug/
+transform/
 1
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
 *.exe
 *.exe.stackdump
+*.exe.manifest
 tags
 *.txt
 *.y
