@@ -77,10 +77,12 @@ static void push_conditional(int v)
 	conditionals[nconditionals-1u]=v;
 }
 
+#if 0
 static int top_conditional(void)
 {
 	return nconditionals > 0u ? conditionals[nconditionals-1u] : 1;	/* Empty stack means true */
 }
+#endif
 
 static int pop_conditional(void)
 {
