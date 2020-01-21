@@ -75,6 +75,7 @@ static void push_conditional(int v)
 {
 	conditionals=realloc(conditionals, ++nconditionals * sizeof *conditionals);
 	conditionals[nconditionals-1u]=v;
+	fprintf(stderr, " push_conditional(%d) - poststate nconditionals = %lu\n", v, nconditionals);
 }
 
 #if 0
@@ -90,6 +91,8 @@ static int pop_conditional(void)
 		fprintf(stderr, "Conditional stack empty\n");
 		exit(EXIT_FAILURE);
 	}
+
+	fprintf(stderr, " pop_conditional() - poststate nconditionals = %lu, returning %d\n", nconditionals-1u, conditionals[nconditionals-1]);
 
 	return conditionals[--nconditionals];
 }
