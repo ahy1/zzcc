@@ -182,6 +182,7 @@ struct node_s *create_node(struct node_s *parent, int type, struct token_s *toke
 	node->type=type;
 	node->in_typedef_declaration=node->parent->in_typedef_declaration;
 	node->token=token;
+	node->has_token=1;
 
 	log_node_token(node, token, ". create_node() Trying on %s\n",
 		node_type_names[node->parent->type]);
@@ -194,6 +195,16 @@ struct node_s *create_mergeable_node(struct node_s *parent, int type, struct tok
 	struct node_s *node=create_node(parent, type, token);
 
 	node->mergeable=1;
+
+	return node;
+}
+
+struct node_s *create_any_node(struct node_s *parent, int type, struct token_s *token, int mergeable, int has_token)
+{
+	struct node_s *node=create_node(parent, type, token);
+
+	node->mergeable=mergeable;
+	node->has_token=has_token;
 
 	return node;
 }
@@ -291,13 +302,16 @@ void print_node_json(struct node_s *node, int ind)
 	indent(ind);
 	fputs("[{\"type\": ", stdout);
 	fputs(json_str(node_type_names[node->type], buf, 1024*1024), stdout);
-	fputs(", \"token\": {\"type\": ", stdout);
-	fputs(json_str(token_type(node->token), buf, 1024*1024), stdout);
-	fputs(", \"text\": ", stdout);
-	fputs(json_str(token_text(node->token), buf, 1024*1024), stdout);
-	fputs(", \"fname\": ", stdout);
-	fputs(json_str(token_fname(node->token), buf, 1024*1024), stdout);
-	printf(", \"fpos\": \"%d,%d\"}}", token_lno(node->token), token_cno(node->token));
+	if (node->has_token) {
+		fputs(", \"token\": {\"type\": ", stdout);
+		fputs(json_str(token_type(node->token), buf, 1024*1024), stdout);
+		fputs(", \"text\": ", stdout);
+		fputs(json_str(token_text(node->token), buf, 1024*1024), stdout);
+		fputs(", \"fname\": ", stdout);
+		fputs(json_str(token_fname(node->token), buf, 1024*1024), stdout);
+		printf(", \"fpos\": \"%d,%d\"}", token_lno(node->token), token_cno(node->token));
+	}
+	putchar('}');
 
 	for (ix=0; ix<node->nsubnodes; ++ix) {
 		puts(","); 

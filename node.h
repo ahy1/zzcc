@@ -94,6 +94,7 @@ struct node_s {
 	int subtype;			/* For operators, the token type is here */
 	int level;			/* Level in syntax three */
 	int mergeable;			/* If this node should be merged with subnode in case of only one subnode */
+	int has_token;			/* Id this node is connected to a certain token */
 	int in_typedef_declaration;	/* Indicates that this node is part of typedef declaration */
 	struct token_s *token;		/* (optional) Token identifying data for this node */
 	struct node_s **subnodes;
@@ -106,6 +107,7 @@ const char *node_type_name(struct node_s *node);
 void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...);
 struct node_s *create_node(struct node_s *parent, int type, struct token_s *token);
 struct node_s *create_mergeable_node(struct node_s *parent, int type, struct token_s *token);
+struct node_s *create_any_node(struct node_s *parent, int type, struct token_s *token, int mergeable, int has_token);
 void set_node_token(struct node_s *node, struct token_s *token);
 size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...);
 int add_node(struct node_s *node);

@@ -51,7 +51,7 @@ static size_t separated(struct node_s *parent, struct token_s **tokens, int nt,
 {
 	/* opt_end_separator: 1 => include opt. end sep., 2=> don't include */
 	size_t parsed, ix=0u;
-	struct node_s *node=mergeable ? create_mergeable_node(parent, nt, tokens[0]) : create_node(parent, nt, tokens[0]);
+	struct node_s *node=/*mergeable ?*/ create_any_node(parent, nt, tokens[0], mergeable, 0);// : create_node(parent, nt, tokens[0]);
 
 	LOG_PARSER("1");
 
@@ -93,7 +93,7 @@ static size_t separated_any_token(struct node_s *parent, struct token_s **tokens
 	int mergeable)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=mergeable ? create_mergeable_node(parent, nt, tokens[0]) : create_node(parent, nt, tokens[0]);
+	struct node_s *node=/*mergeable ?*/ create_any_node(parent, nt, tokens[0], mergeable, 0);// : create_node(parent, nt, tokens[0]);
 	int separator_cnt=0;
 
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
@@ -117,7 +117,7 @@ static size_t many(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **), int mergeable)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=mergeable ? create_mergeable_node(parent, nt, tokens[0]) : create_node(parent, nt, tokens[0]);
+	struct node_s *node=/*mergeable ?*/ create_any_node(parent, nt, tokens[0], mergeable, 0);// : create_node(parent, nt, tokens[0]);
 
 	while ((parsed=pf(node, tokens+ix))) ix+=parsed;
 
@@ -131,7 +131,7 @@ static size_t any_of_2(struct node_s *parent, struct token_s **tokens, int nt,
 	int mergeable)
 {
 	size_t parsed;
-	struct node_s *node=mergeable ? create_mergeable_node(parent, nt, tokens[0]) : create_node(parent, nt, tokens[0]);
+	struct node_s *node=/*mergeable ?*/ create_any_node(parent, nt, tokens[0], mergeable, 0);// : create_node(parent, nt, tokens[0]);
 
 	if ((parsed=pf1(node, tokens)) || (parsed=pf2(node, tokens))) return add_node(node), parsed;
 	else return free_node(node);
@@ -170,7 +170,7 @@ static size_t prepostfix_tokens(struct node_s *parent, struct token_s **tokens, 
 	size_t (*pf)(struct node_s *, struct token_s **), int pre_tt, int post_tt, int mergeable)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=mergeable ? create_mergeable_node(parent, nt, tokens[0]) : create_node(parent, nt, tokens[0]);
+	struct node_s *node=/*mergeable ?*/ create_any_node(parent, nt, tokens[0], mergeable, 0);// : create_node(parent, nt, tokens[0]);
 
 	LOG_PARSER("1");
 	if (tokens[ix]->type==pre_tt) ++ix;
@@ -631,7 +631,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_mergeable_node(parent, ASSIGNMENT_EXPRESSION, tokens[0]);
+	struct node_s *node=create_any_node(parent, ASSIGNMENT_EXPRESSION, tokens[0], 1, 0);
 
 	LOG_PARSER("Start");
 
@@ -734,7 +734,7 @@ static size_t abstract_declarator(struct node_s *parent, struct token_s **tokens
 static size_t parameter_declaration(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, PARAMETER_DECLARATION, tokens[0]);
+	struct node_s *node=create_any_node(parent, PARAMETER_DECLARATION, tokens[0], 0, 0);
 
 	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
@@ -752,7 +752,7 @@ static size_t parameter_declaration(struct node_s *parent, struct token_s **toke
 static size_t parameter_type_list(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, PARAMETER_TYPE_LIST, tokens[0]);
+	struct node_s *node=create_any_node(parent, PARAMETER_TYPE_LIST, tokens[0], 0, 0);
 
 	if ((parsed=separated(node, tokens+ix, PARAMETER_LIST, parameter_declaration, TT_COMMA_OP, 2, 0))) ix+=parsed;
 	else return free_node(node);
@@ -972,7 +972,7 @@ static size_t type_qualifier_list(struct node_s *parent, struct token_s **tokens
 static size_t declaration_specifiers(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, DECLARATION_SPECIFIERS, tokens[0]);
+	struct node_s *node=create_any_node(parent, DECLARATION_SPECIFIERS, tokens[0], 0, 0);
 	int include_typedef=1;
 
 	/* TODO: Cleanup and update to C11 */
@@ -1021,7 +1021,7 @@ static size_t identifier(struct node_s *parent, struct token_s **tokens)
 static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, DIRECT_DECLARATOR, tokens[0]);
+	struct node_s *node=create_any_node(parent, DIRECT_DECLARATOR, tokens[0], 0, 0);
 	int tt;
 
 	/* identifier 
@@ -1080,7 +1080,7 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 static size_t declarator(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, DECLARATOR, tokens[0]);
+	struct node_s *node=create_any_node(parent, DECLARATOR, tokens[0], 0, 0);
 
 	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
 
@@ -1355,7 +1355,7 @@ static size_t jump_statement(struct node_s *parent, struct token_s **tokens)
 static size_t statement(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, STATEMENT, tokens[0]);
+	struct node_s *node=create_any_node(parent, STATEMENT, tokens[0], 0, 0);
 
 	if ((parsed=labeled_statement(node, tokens+ix))
 		|| (parsed=compound_statement(node, tokens+ix))
@@ -1379,7 +1379,7 @@ static size_t block_item(struct node_s *parent, struct token_s **tokens)
 static size_t compound_statement(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, COMPOUND_STATEMENT, tokens[0]);
+	struct node_s *node=create_any_node(parent, COMPOUND_STATEMENT, tokens[0], 0, 0);
 
 	if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
 	else return free_node(node);
@@ -1395,7 +1395,7 @@ static size_t compound_statement(struct node_s *parent, struct token_s **tokens)
 static size_t function_definition(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, FUNCTION_DEFINITION, tokens[0]);
+	struct node_s *node=create_any_node(parent, FUNCTION_DEFINITION, tokens[0], 0, 0);
 
 	if ((parsed=declaration_specifiers(node, tokens+ix))) ix+=parsed;
 
@@ -1413,7 +1413,7 @@ static size_t function_definition(struct node_s *parent, struct token_s **tokens
 static size_t translation_unit(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_node(parent, TRANSLATION_UNIT, tokens[0]);
+	struct node_s *node=create_any_node(parent, TRANSLATION_UNIT, tokens[0], 0, 0);
 
 	add_typealias_text(node, "__builtin_va_list");
 
@@ -1427,7 +1427,7 @@ size_t parse(struct node_s *parent, struct token_s **tokens)
 	size_t parsed;
 	struct node_s *node;
 
-	g_root_node=node=create_node(parent, NT_UNIT, tokens[0]);
+	g_root_node=node=create_any_node(parent, NT_UNIT, tokens[0], 0, 0);
 
 	if ((parsed=translation_unit(node, tokens))) return add_node(node), parsed;
 	else return free_node(node);

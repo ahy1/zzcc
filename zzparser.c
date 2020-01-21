@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
 
 	memset(&root_node, 0, sizeof root_node);
 	root_node.type=NT_ROOT;
+	root_node.has_token=0;
 
 	parsed=parse(&root_node, tokens);
 
