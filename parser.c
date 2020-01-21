@@ -562,7 +562,7 @@ static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
 static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_mergeable_node(parent, UNARY_EXPRESSION, tokens[0]);
+	struct node_s *node=create_any_node(parent, UNARY_EXPRESSION, tokens[0], 0, 0);
 
 	/*
 	 * : postfix_expression
@@ -631,7 +631,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_any_node(parent, ASSIGNMENT_EXPRESSION, tokens[0], 1, 0);
+	struct node_s *node=create_any_node(parent, ASSIGNMENT_EXPRESSION, tokens[0], 0, 0);
 
 	LOG_PARSER("Start");
 
