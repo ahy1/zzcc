@@ -112,6 +112,7 @@ void set_node_token(struct node_s *node, struct token_s *token);
 size_t error_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...);
 int add_node(struct node_s *node);
 size_t free_node(struct node_s *node);
+void free_last_sub_node(struct node_s *node);
 void print_node(struct node_s *node, int ind);
 void print_node_json(struct node_s *node, int ind);
 

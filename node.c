@@ -252,16 +252,18 @@ int add_node(struct node_s *node)
 	return 0;
 }
 
+
+
 size_t free_node(struct node_s *node)
 {
 	size_t ix;
 
-	log_node_token(node, node->token, "- free_node(): Freeing from %s\n", 
-		node_type_names[node->parent->type]);
+/*	log_node_token(node, node->token, "- free_node(): Freeing from %s\n", 
+		node_type_names[node->parent->type]);*/
 
 	if (node->parent 
 			&& node->parent->nsubnodes > 0u
-			&& node->parent->subnodes[node->parent->nsubnodes]==node) {
+			&& node->parent->subnodes[node->parent->nsubnodes-1]==node) {
 		--node->parent->nsubnodes;
 	}
 
@@ -271,6 +273,15 @@ size_t free_node(struct node_s *node)
 
 	return (size_t)0;
 }
+
+void free_last_sub_node(struct node_s *node)
+{
+	if (node->nsubnodes > 0u) {
+		--node->nsubnodes;
+		nodefree(node->subnodes[node->nsubnodes]);
+	}
+}
+
 
 static void indent(int ind)
 {
