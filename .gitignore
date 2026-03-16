@@ -27,3 +27,5 @@ cpstrbuf.sh
 test_00??-*.c
 ref/
 .vs
+zzcc.sln
+*.pdb
