@@ -26,3 +26,4 @@ cpstrbuf.sh
 00??-*.c.disabled
 test_00??-*.c
 ref/
+.vs
