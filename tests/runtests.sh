@@ -23,6 +23,7 @@ for fname in test_*.c; do
 	echo "" >>"$errfname"
 done
 
+
 # Testing C preprocessor
 
 for fname in testcpp_*.c; do
