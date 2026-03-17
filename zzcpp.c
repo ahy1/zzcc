@@ -28,7 +28,8 @@ static void failuref(const char *fmt, ...)
 	exit(EXIT_FAILURE);
 }
 
-enum {PPM_NORMAL,
+enum {
+	PPM_NORMAL,
 	PPM_DIRECTIVE,
 	PPM_INCLUDE,
 	PPM_DEFINE,
@@ -175,6 +176,8 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			?gettoken_include(fp, sb, &lno, &cno)
 			:gettoken(fp, sb, &lno, &cno)))) {
 		text=token_text(token);
+
+		fprintf(stderr, "Token %d [%s]\n", (int)mode, token_text(token));
 
 		switch (mode) {
 		case PPM_NORMAL:
