@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CodeLLDB: Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/zzcpp.exe",
+            "args": [],
+            "cwd": "${fileDirname}"
+        }
+    ]
+}

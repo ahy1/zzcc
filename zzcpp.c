@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include <libgen.h>	/* dirname() */
 #include <limits.h>
 
 #include "token.h"
@@ -76,7 +75,7 @@ static void push_conditional(int v)
 {
 	conditionals=realloc(conditionals, ++nconditionals * sizeof *conditionals);
 	conditionals[nconditionals-1u]=v;
-	fprintf(stderr, " push_conditional(%d) - poststate nconditionals = %lu\n", v, nconditionals);
+	fprintf(stderr, " push_conditional(%d) - poststate nconditionals = %zu\n", v, nconditionals);
 }
 
 #if 0
@@ -93,7 +92,7 @@ static int pop_conditional(void)
 		exit(EXIT_FAILURE);
 	}
 
-	fprintf(stderr, " pop_conditional() - poststate nconditionals = %lu, returning %d\n", nconditionals-1u, conditionals[nconditionals-1]);
+	fprintf(stderr, " pop_conditional() - poststate nconditionals = %zu, returning %d\n", nconditionals-1u, conditionals[nconditionals-1]);
 
 	return conditionals[--nconditionals];
 }
@@ -135,12 +134,12 @@ static char *prj_file_paths[]={
 static const char *lookup_file(size_t npaths, char *paths[], const char *fname)
 {
 	size_t i;
-	static char fpath[PATH_MAX];	/* TODO: Static ok? */
+	static char fpath[FILENAME_MAX];	/* TODO: Static ok? */
 
 	for (i=0u; i<npaths; ++i) {
 		strcpy(fpath, paths[i]);
 		strcat(fpath, "/");
-		strcat(fpath, fname);	/* TODO: Don't trust PATH_MAX */
+		strcat(fpath, fname);	/* TODO: Don't trust FILENAME_MAX */
 
 		if (file_exists(fpath)) return fpath;	/* TODO: Add path to check */
 	}
@@ -177,13 +176,11 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			:gettoken(fp, sb, &lno, &cno)))) {
 		text=token_text(token);
 
-		fprintf(stderr, "Token %d [%s]\n", (int)mode, token_text(token));
-
 		switch (mode) {
 		case PPM_NORMAL:
 			fprintf(stderr, "m NORMAL [%s]\n", token_text(token));
 			if (token->type==TT_PREPROCESSOR) {
-				fprintf(stderr, "tt PREPROCESSOR [%s]\n", token_text(token));
+				fprintf(stderr, "tt PREPROCESSOR [%s]\n", token_type(token));
 				if (prev_token->type==TT_WHITESPACE 
 					&& prev_token->subtype==WTT_NEWLINEWS)
 					mode=PPM_DIRECTIVE;
@@ -194,7 +191,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_DIRECTIVE:
-			fprintf(stderr, "m DIRECTIVE [%s]\n", token_text(token));
+			fprintf(stderr, "m DIRECTIVE [%s] [%s]\n", token_type(token), text);
 			if (!strcmp(text, "include")) mode=PPM_INCLUDE;
 			else if (!strcmp(text, "define")) mode=PPM_DEFINE;
 			else if (!strcmp(text, "if")) mode=PPM_IF;
@@ -212,7 +209,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			else failure("Unknown preprocessor directive\n");
 			break;
 		case PPM_INCLUDE:
-			fprintf(stderr, "m INCLUDE [%s]\n", token_text(token));
+			fprintf(stderr, "m INCLUDE [%s]\n", token_type(token));
 			if (token->type!=TT_WHITESPACE) {
 				if (token->type==TT_INCLUDE) {
 					if(!(fpath=lookup_lib_file(token_text(token))))
@@ -228,14 +225,14 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_DEFINE:
-			fprintf(stderr, "m DEFINE [%s]\n", token_text(token));
+			fprintf(stderr, "m DEFINE [%s] [%s]\n", token_type(token), text);
 			if (token->type!=TT_WHITESPACE) {
 				define_name=token;
 				mode=PPM_DEFINE_VALUE;
 			}
 			break;
 		case PPM_DEFINE_VALUE:
-			fprintf(stderr, "m DEFINE_VALUE [%s]\n", token_text(token));
+			fprintf(stderr, "m DEFINE_VALUE [%s] [%s]\n", token_type(token), text);
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
 					fprintf(stderr, " -- End of define value\n");
@@ -256,10 +253,11 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_IF:
+			fprintf(stderr, "m IF [%s]\n", token_type(token));
 			/* TODO: Push expression */
 			break;
 		case PPM_IFDEF:
-			fprintf(stderr, "m IFDEF [%s]\n", token_text(token));
+			fprintf(stderr, "m IFDEF [%s]\n", token_type(token));
 			if (token->type!=TT_WHITESPACE) {
 				if (get_define(token)) {
 					fprintf(stderr, "m IFDEF [%s] Found it\n", token_text(token));
@@ -272,7 +270,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_IFNDEF:
-			fprintf(stderr, "m IFNDEF [%s]\n", token_text(token));
+			fprintf(stderr, "m IFNDEF [%s]\n", token_type(token));
 			if (token->type!=TT_WHITESPACE) {
 				if (get_define(token)) {
 					fprintf(stderr, "m IFNDEF [%s] Found it\n", token_text(token));
@@ -285,18 +283,21 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_ELSE:
-			fprintf(stderr, "m ELSE [%s]\n", token_text(token));
+			fprintf(stderr, "m ELSE [%s]\n", token_type(token));
 			push_conditional(!pop_conditional());
 			mode=PPM_SKIP_EOL;
 			break;
 		case PPM_ELIF:
+			fprintf(stderr, "m ELIF [%s]\n", token_type(token));
 			/* TODO: Pop, then push opposite && expression */
 			break;
 		case PPM_ENDIF:
+			fprintf(stderr, "m ENDIF [%s]\n", token_type(token));
 			pop_conditional();
 			mode=PPM_SKIP_EOL;
 			break;
 		case PPM_UNDEF:
+			fprintf(stderr, "m UNDEF [%s]\n", token_type(token));
 			if (token->type!=TT_WHITESPACE) {
 				for (ix=0; ix<ndefines; ++ix) {
 					if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
@@ -307,13 +308,16 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		case PPM_PRAGMA:
+			fprintf(stderr, "m PRAGMA [%s]\n", token_type(token));
 			break;
 		case PPM_LINE:
+			fprintf(stderr, "m LINE [%s]\n", token_type(token));
 			break;
 		case PPM_ERROR:
-			fprintf(stderr, "ERROR: %s\n", token_text(token));
+			fprintf(stderr, "m ERROR [%s]\n", token_type(token));
 			exit(EXIT_FAILURE);
 		case PPM_SKIP_EOL:
+			fprintf(stderr, "m SKKIP_EOL [%s]\n", token_type(token));
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
 					fprintf(stderr, " -- End of directive [%s]\n", token_text(token));
@@ -326,6 +330,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			}
 			break;
 		default:
+			fprintf(stderr, "m default [%s]\n", token_text(token));
 			if (token->type==TT_PREPROCESSOR) {
 				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS) mode=PPM_DIRECTIVE;
 				else {
@@ -362,16 +367,29 @@ static int preprocess_file(STRBUF *sb, const char *fname)
 int main(int argc, char *argv[])
 {
 	STRBUF *sb;
+	char *p;
+
+	puts("Starting");
 
 	sb=sballoc(1024);
 
+	puts("Continuing");
+
 	if (argc>1) {
-		prj_file_paths[0]=dirname(strdup(argv[1]));
+		prj_file_paths[0]=strdup(argv[1]);
+		for (p=prj_file_paths[0]+strlen(prj_file_paths[0]); p>prj_file_paths[0]; --p) {
+			if (*p=='/' || *p=='\\') {
+				*p = '\0';
+				break;
+			}
+		}
 
 		(void)preprocess_file(sb, argv[1]);
 	} else (void)preprocess_fp(sb, stdin);
 
 	(void)sbfree(sb);
+
+	puts("Stopping");
 
 	return EXIT_SUCCESS;
 }

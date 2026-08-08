@@ -1,11 +1,7 @@
-
-
-
-
-CC=cc
-CFLAGS=-Wall -g -pg
-LD=cc
-LDFLAGS=-Wall -g -pg
+CC=C:\p\src\llvm-project\build\bin\clang.exe
+CFLAGS=-Wall -g3 -glldb -Wno-deprecated-declarations
+LD=C:\p\src\llvm-project\build\bin\clang.exe
+LDFLAGS=-Wall -g3 -glldb
 
 all: zzparser zzcpp
 

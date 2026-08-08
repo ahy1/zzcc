@@ -24,7 +24,7 @@ static void test_ulong(const char *name, size_t expected, size_t actual)
 	printf("  [%s]\n", name);
 
 	if (expected==actual) puts("   OK");
-	else printf("   FAILED: Expected %lu, got %lu\n", expected, actual);
+	else printf("   FAILED: Expected %zu, got %zu\n", expected, actual);
 }
 
 static void test_parcom(const char *testcode)
