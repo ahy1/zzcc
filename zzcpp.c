@@ -369,11 +369,7 @@ int main(int argc, char *argv[])
 	STRBUF *sb;
 	char *p;
 
-	puts("Starting");
-
 	sb=sballoc(1024);
-
-	puts("Continuing");
 
 	if (argc>1) {
 		prj_file_paths[0]=strdup(argv[1]);
@@ -388,8 +384,6 @@ int main(int argc, char *argv[])
 	} else (void)preprocess_fp(sb, stdin);
 
 	(void)sbfree(sb);
-
-	puts("Stopping");
 
 	return EXIT_SUCCESS;
 }
