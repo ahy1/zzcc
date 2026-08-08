@@ -29,3 +29,5 @@ ref/
 .vs
 zzcc.sln
 *.pdb
+zzcpp
+zzparser
