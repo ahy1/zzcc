@@ -5,8 +5,8 @@
             "name": "CodeLLDB: Launch",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/zzcpp.exe",
-            "args": [],
+            "program": "${workspaceFolder}/build/zzcpp",
+            "args": ["${workspaceFolder}/tests/testcpp_ifndef.c"],
             "cwd": "${fileDirname}"
         }
     ]

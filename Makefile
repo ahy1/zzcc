@@ -1,68 +1,53 @@
-CC=C:\p\src\llvm-project\build\bin\clang.exe
-CFLAGS=-Wall -g3 -glldb -Wno-deprecated-declarations
-LD=C:\p\src\llvm-project\build\bin\clang.exe
+TOOL_DIR := c:\p\src\llvm-project\build\bin
+
+CC=${TOOL_DIR}/clang.exe
+LD=${CC}
+
+BUILD_DIR := build
+
+SRC := \
+	src/dump.c \
+	src/expression.c \
+	src/json.c \
+	src/node.c \
+	src/parcom.c \
+	src/parser.c \
+	src/stack.c \
+	src/strbuf.c \
+	src/token.c \
+	src/tokenclass.c \
+	src/zzcpp.c \
+	src/zzparser.c
+
+OBJ := ${addprefix ${BUILD_DIR}/, ${SRC:.c=.o}}
+#DEPS := ${OBJ:.o=.d}
+
+CFLAGS=-Wall -g3 -glldb -Wno-deprecated-declarations -Isrc
 LDFLAGS=-Wall -g3 -glldb
 
-all: zzparser zzcpp
+.PHONY: all
 
-zzcpp: token.o strbuf.o zzcpp.o	dump.o json.o
-	$(LD) -o zzcpp $(LDFLAGS) token.o strbuf.o zzcpp.o dump.o json.o
+all: ${BUILD_DIR}/zzparser ${BUILD_DIR}/zzcpp
 
-zzcpp.o: zzcpp.c token.h strbuf.h json.h
-	$(CC) -o zzcpp.o $(CFLAGS) -c zzcpp.c
+${BUILD_DIR}/zzparser: ${OBJ} | ${BUILD_DIR}
+	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzcpp.o,$^)
 
-zzparser: parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o expression.o node.o
-	$(LD) -o zzparser $(LDFLAGS) parser.o token.o strbuf.o tokenclass.o stack.o zzparser.o dump.o parcom.o json.o expression.o node.o
+${BUILD_DIR}/zzcpp: ${OBJ} | ${BUILD_DIR}
+	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzparser.o,$^)
 
-zzparser.o: zzparser.c parser.h token.h strbuf.h parcom.h node.h
-	$(CC) -o zzparser.o $(CFLAGS) -c zzparser.c
+${BUILD_DIR}/%.o: %.c Makefile | ${BUILD_DIR}/src
+	${CC} -o $@ ${CFLAGS} -c $<
 
-parser.o: parser.c parser.h token.h tokenclass.h dump.h expression.h node.h
-	$(CC) -o parser.o $(CFLAGS) -c parser.c
-
-node.o: node.c node.h stack.h json.h
-	$(CC) -o node.o $(CFLAGS) -c node.c
-
-expression.o: expression.c expression.h node.h token.h tokenclass.h parser.h
-	$(CC) -o expression.o $(CFLAGS) -c expression.c
-
-json.o: json.c json.h
-	$(CC) -o json.o $(CFLAGS) -c json.c
-
-token.o: token.c token.h strbuf.h
-	$(CC) -o token.o $(CFLAGS) -c token.c
-
-strbuf.o: strbuf.c strbuf.h
-	$(CC) -o strbuf.o $(CFLAGS) -c strbuf.c
-
-tokenclass.o: tokenclass.c tokenclass.h token.h
-	$(CC) -o tokenclass.o $(CFLAGS) -c tokenclass.c
-
-
-stack.o: stack.c stack.h
-	$(CC) -o stack.o $(CFLAGS) -c stack.c
-
-dump.o: dump.c dump.h
-	$(CC) -o dump.o $(CFLAGS) -c dump.c
-
-parcom.o: parcom.c parcom.h
-	$(CC) -o parcom.o $(CFLAGS) -c parcom.c
-
+${BUILD_DIR}:
+	mkdir -p ${BUILD_DIR}
+	
+${BUILD_DIR}/src:
+	mkdir -p ${BUILD_DIR}/src
+	
 .PHONY: clean
 
 clean:
-	rm *.o
-
-.PHONY: clang
-
-clang:
-	clang -Weverything -Wno-format-nonliteral -Wno-deprecated-declarations -Wno-unused-parameter -Wno-missing-noreturn -Wno-unused-value -c *.c
-	rm *.o
-
-.PHONY: lint
-
-lint:
-	splint -redef -nestcomment -nullret -mustfreeonly -temptrans -predboolint -mustfreefresh -compdestroy -boolops -nullderef -nullstate -unqualifiedtrans -bufferoverflowhigh -compdef -usereleased -branchstate -mayaliasunique -dependenttrans *.c
+	rm -rf ${BUILD_DIR}
 
 .PHONY: check
 
