@@ -13,7 +13,7 @@ for fname in test_*.c; do
 	echo "" >"$outfname"
 	echo "" >"$errfname"
 
-	../zzparser.exe <"$fname" 2>>"$errfname" >>"$outfname"
+	../build/zzparser <"$fname" 2>>"$errfname" >>"$outfname"
 	if test $? != 0; then
 		echo " >>> Failed"
 #		break
@@ -35,7 +35,7 @@ for fname in testcpp_*.c; do
 	echo "" >"$outfname"
 	echo "" >"$errfname"
 
-	../zzcpp.exe <"$fname" 2>>"$errfname" >>"$outfname"
+	../build/zzcpp <"$fname" 2>>"$errfname" >>"$outfname"
 	if test $? != 0; then
 		echo " >>> Failed"
 	fi
