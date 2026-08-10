@@ -49,8 +49,8 @@ ${BUILD_DIR}/src:
 clean:
 	rm -rf ${BUILD_DIR}
 
-.PHONY: check
+.PHONY: test
 
-check:
+test:
 	(cd tests; ./runtests.sh)
 
