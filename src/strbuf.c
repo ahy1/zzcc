@@ -49,7 +49,7 @@ STRBUF *sbexpand(STRBUF *sb, size_t needed_capacity)
 {
 	if (needed_capacity>sb->capacity) {
 		if (needed_capacity<sb->capacity*2) sb=sbrealloc(sb, sb->capacity*2);
-		else sb=realloc(sb, needed_capacity);
+		else sb=sbrealloc(sb, needed_capacity);
 	}
 
 	return sb;
