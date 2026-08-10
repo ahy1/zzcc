@@ -2,11 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "CodeLLDB: Launch",
+            "name": "CodeLLDB: Launch zzcpp",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/zzcpp",
             "args": ["${workspaceFolder}/tests/testcpp_ifndef.c"],
+            "cwd": "${fileDirname}"
+        },
+        {
+            "name": "CodeLLDB: Launch zzparser",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/zzparser",
+            "args": [],
             "cwd": "${fileDirname}"
         }
     ]
