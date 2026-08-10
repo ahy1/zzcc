@@ -24,7 +24,7 @@ static int add_typealias_node(struct node_s *node)
 {
 	const char *text=token_text(node->token);
 
-	log_node_token(node, node->token, "@ add_typealias(): Adding to %s - %s\n", 
+	log_node_token(node, node->token, "@ add_typealias(): Adding to %s\n", 
 		node_type_name(node->scope_parent));
 
 	return add_typealias_text(node->scope_parent, text);
@@ -1086,19 +1086,27 @@ static size_t declarator(struct node_s *parent, struct token_s **tokens)
 	size_t parsed, ix=0u;
 	struct node_s *node=create_any_node(parent, DECLARATOR, tokens[0], 0, 0);
 
+	LOG_PARSER("Start");
+
 	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
 
+	LOG_PARSER("1");
 	if ((parsed=pointer(node, tokens+ix))) ix+=parsed;
 
+	LOG_PARSER("2");
 	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
 
+	LOG_PARSER("3");
 	set_node_token(node, tokens[ix]);
 
+	LOG_PARSER("3a");
 	if ((parsed=direct_declarator(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
+	LOG_PARSER("4");
 	if ((parsed=attribute(node, tokens+ix))) ix+=parsed;
 
+	LOG_PARSER("5");
 	return add_node(node), ix;
 }
 
