@@ -6,7 +6,9 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/zzcpp",
-            "args": ["${workspaceFolder}/tests/testcpp_ifndef.c"],
+            "args": [
+                "${input:args}"
+            ],
             "cwd": "${fileDirname}"
         },
         {
@@ -14,8 +16,18 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/zzparser",
-            "args": [],
+            "args": [
+                "${input:args}"
+            ],
             "cwd": "${fileDirname}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "args",
+            "type": "promptString",
+            "description": "Args: ",
+            "default": ""
         }
     ]
 }
