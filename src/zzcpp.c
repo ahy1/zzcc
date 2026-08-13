@@ -78,6 +78,11 @@ static void push_conditional(int v)
 	fprintf(stderr, " push_conditional(%d) - poststate nconditionals = %zu\n", v, nconditionals);
 }
 
+static int top_conditional(void)
+{
+	return nconditionals>0 ? conditionals[nconditionals-1] : 1;
+}
+
 #if 0
 static int top_conditional(void)
 {
@@ -241,10 +246,12 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
 					fprintf(stderr, " -- End of define value\n");
-					defines=realloc(defines, ++ndefines * sizeof defines[0]);
-					defines[ndefines-1].name=define_name;
-					defines[ndefines-1].values=define_values;
-					defines[ndefines-1].nvalues=define_nvalues;
+					if (top_conditional()) {
+						defines=realloc(defines, ++ndefines * sizeof defines[0]);
+						defines[ndefines-1].name=define_name;
+						defines[ndefines-1].values=define_values;
+						defines[ndefines-1].nvalues=define_nvalues;
+					}
 
 					define_name=NULL;
 					define_values=NULL;
@@ -330,7 +337,9 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 		case PPM_ERROR:
 			fprintf(stderr, "m ERROR [%s]\n", token_type(token));
 			print_token("    ", token);
-			exit(EXIT_FAILURE);
+			if (top_conditional()) {
+				exit(EXIT_FAILURE);
+			}
 		case PPM_SKIP_EOL:
 			fprintf(stderr, "m SKKIP_EOL [%s]\n", token_type(token));
 			print_token("    ", token);
