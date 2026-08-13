@@ -171,7 +171,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 	size_t ix;
 
 	while ((token=
-		(mode==PPM_INCLUDE 
+		(mode==PPM_INCLUDE
 			?gettoken_include(fp, sb, &lno, &cno)
 			:gettoken(fp, sb, &lno, &cno)))) {
 		text=token_text(token);
@@ -179,9 +179,10 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 		switch (mode) {
 		case PPM_NORMAL:
 			fprintf(stderr, "m NORMAL [%s]\n", token_text(token));
+			print_token("    ", token);
 			if (token->type==TT_PREPROCESSOR) {
 				fprintf(stderr, "tt PREPROCESSOR [%s]\n", token_type(token));
-				if (prev_token->type==TT_WHITESPACE 
+				if (prev_token->type==TT_WHITESPACE
 					&& prev_token->subtype==WTT_NEWLINEWS)
 					mode=PPM_DIRECTIVE;
 			} else if (token->type==TT_PREPROCESSOR_CONCAT) {
@@ -192,6 +193,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_DIRECTIVE:
 			fprintf(stderr, "m DIRECTIVE [%s] [%s]\n", token_type(token), text);
+			print_token("    ", token);
 			if (!strcmp(text, "include")) mode=PPM_INCLUDE;
 			else if (!strcmp(text, "define")) mode=PPM_DEFINE;
 			else if (!strcmp(text, "if")) mode=PPM_IF;
@@ -204,12 +206,13 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			else if (!strcmp(text, "pragma")) mode=PPM_PRAGMA;
 			else if (!strcmp(text, "line")) mode=PPM_LINE;
 			else if (!strcmp(text, "error")) mode=PPM_ERROR;
-			else if (token->type==TT_WHITESPACE 
+			else if (token->type==TT_WHITESPACE
 				&& token->subtype!=WTT_NEWLINEWS) continue;
 			else failure("Unknown preprocessor directive\n");
 			break;
 		case PPM_INCLUDE:
 			fprintf(stderr, "m INCLUDE [%s]\n", token_type(token));
+			print_token("    ", token);
 			if (token->type!=TT_WHITESPACE) {
 				if (token->type==TT_INCLUDE) {
 					if(!(fpath=lookup_lib_file(token_text(token))))
@@ -226,6 +229,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_DEFINE:
 			fprintf(stderr, "m DEFINE [%s] [%s]\n", token_type(token), text);
+			print_token("    ", token);
 			if (token->type!=TT_WHITESPACE) {
 				define_name=token;
 				mode=PPM_DEFINE_VALUE;
@@ -233,6 +237,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_DEFINE_VALUE:
 			fprintf(stderr, "m DEFINE_VALUE [%s] [%s]\n", token_type(token), text);
+			print_token("    ", token);
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
 					fprintf(stderr, " -- End of define value\n");
@@ -254,10 +259,12 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_IF:
 			fprintf(stderr, "m IF [%s]\n", token_type(token));
+			print_token("    ", token);
 			/* TODO: Push expression */
 			break;
 		case PPM_IFDEF:
 			fprintf(stderr, "m IFDEF [%s]\n", token_type(token));
+			print_token("    ", token);
 			if (token->type!=TT_WHITESPACE) {
 				if (get_define(token)) {
 					fprintf(stderr, "m IFDEF [%s] Found it\n", token_text(token));
@@ -271,6 +278,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_IFNDEF:
 			fprintf(stderr, "m IFNDEF [%s]\n", token_type(token));
+			print_token("    ", token);
 			if (token->type!=TT_WHITESPACE) {
 				if (get_define(token)) {
 					fprintf(stderr, "m IFNDEF [%s] Found it\n", token_text(token));
@@ -284,20 +292,24 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_ELSE:
 			fprintf(stderr, "m ELSE [%s]\n", token_type(token));
+			print_token("    ", token);
 			push_conditional(!pop_conditional());
 			mode=PPM_SKIP_EOL;
 			break;
 		case PPM_ELIF:
 			fprintf(stderr, "m ELIF [%s]\n", token_type(token));
+			print_token("    ", token);
 			/* TODO: Pop, then push opposite && expression */
 			break;
 		case PPM_ENDIF:
 			fprintf(stderr, "m ENDIF [%s]\n", token_type(token));
+			print_token("    ", token);
 			pop_conditional();
 			mode=PPM_SKIP_EOL;
 			break;
 		case PPM_UNDEF:
 			fprintf(stderr, "m UNDEF [%s]\n", token_type(token));
+			print_token("    ", token);
 			if (token->type!=TT_WHITESPACE) {
 				for (ix=0; ix<ndefines; ++ix) {
 					if (!strcmp(token_text(defines[ndefines].name), token_text(token))) {
@@ -309,15 +321,19 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		case PPM_PRAGMA:
 			fprintf(stderr, "m PRAGMA [%s]\n", token_type(token));
+			print_token("    ", token);
 			break;
 		case PPM_LINE:
 			fprintf(stderr, "m LINE [%s]\n", token_type(token));
+			print_token("    ", token);
 			break;
 		case PPM_ERROR:
 			fprintf(stderr, "m ERROR [%s]\n", token_type(token));
+			print_token("    ", token);
 			exit(EXIT_FAILURE);
 		case PPM_SKIP_EOL:
 			fprintf(stderr, "m SKKIP_EOL [%s]\n", token_type(token));
+			print_token("    ", token);
 			if (token->type==TT_WHITESPACE) {
 				if (token->subtype==WTT_NEWLINEWS) {
 					fprintf(stderr, " -- End of directive [%s]\n", token_text(token));
@@ -331,6 +347,7 @@ static int preprocess_fp(STRBUF *sb, FILE *fp)
 			break;
 		default:
 			fprintf(stderr, "m default [%s]\n", token_text(token));
+			print_token("    ", token);
 			if (token->type==TT_PREPROCESSOR) {
 				if (prev_token->type==TT_WHITESPACE && prev_token->subtype==WTT_NEWLINEWS) mode=PPM_DIRECTIVE;
 				else {

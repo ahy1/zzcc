@@ -10,8 +10,8 @@ static const char *token_type_names[]={
 	"TT_NULL",
 	"TT_END",
 	"TT_ERROR",
-	"TT_WHITESPACE", 
-	"TT_PREPROCESSOR", 
+	"TT_WHITESPACE",
+	"TT_PREPROCESSOR",
 	"TT_PREPROCESSOR_CONCAT",
 	"TT_TEXTUAL",
 	"TT_RETURN",
@@ -26,9 +26,9 @@ static const char *token_type_names[]={
 	"TT_SWITCH",
 	"TT_CASE",
 	"TT_DEFAULT",
-	"TT_NUMBER", 
-	"TT_STRING", 
-	"TT_CHARACTER", 
+	"TT_NUMBER",
+	"TT_STRING",
+	"TT_CHARACTER",
 	"TT_OPERATOR",
 	"TT_PLUS_OP",
 	"TT_PLUS_ASSIGNMENT_OP",
@@ -107,7 +107,7 @@ static const char *token_type_names[]={
 	"TT_INCLUDE",
 };
 
-/* << Rewrite for generic lexing 
+/* << Rewrite for generic lexing
 */
 
 enum {PT_EXACT, PT_RE};
@@ -232,10 +232,10 @@ struct token_s *gettoken(FILE *infp, STRBUF *sb, int *lno, int *cno)
 		}
 		(void)unfetch(ch, infp, lno, cno);
 		break;
-	case '_': 
-	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': 
+	case '_':
+	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J': case 'K': case 'L': case 'M':
 	case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z':
-	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': 
+	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': case 'm':
 	case 'n': case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z':
 		/* Identifyer or keyword */
 		token->type=TT_TEXTUAL;
@@ -641,7 +641,7 @@ const char *token_type(const struct token_s *token)
 
 void print_token(const char *prefix, const struct token_s *token)
 {
-	printf("%s %d:%d [%s](%d/%d)\n", prefix, token->lno, token->cno, token_text(token), token->type, token->subtype);
+	printf("%s %d:%d [%s](%s/%d)\n", prefix, token->lno, token->cno, token_text(token), token_type(token), token->subtype);
 }
 
 
