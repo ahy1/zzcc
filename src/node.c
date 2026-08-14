@@ -1,11 +1,8 @@
-
 #include <stdarg.h>
 
 #include "stack.h"
 #include "json.h"
 #include "node.h"
-
-
 
 static const char *node_type_names[]={
 	"TRANSLATION_UNIT",
@@ -97,7 +94,7 @@ const char *node_type_name(struct node_s *node)
 
 static void print_node_type(FILE *fp, struct node_s *node)
 {
-	fprintf(stderr, "{%-26s}", node_type_names[node->type]); 
+	fprintf(stderr, "{%-26s}", node_type_names[node->type]);
 }
 
 void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...)
@@ -218,8 +215,8 @@ size_t error_node_token(struct node_s *node, struct token_s *token, const char *
 {
 	va_list arg;
 
-	fprintf(stderr, "ERROR (%s %d/%d %s %s): ", 
-		node_type_names[node->type], 
+	fprintf(stderr, "ERROR (%s %d/%d %s %s): ",
+		node_type_names[node->type],
 		token_lno(token), token_cno(token),
 		token_type(token), token_text(token));
 	va_start(arg, fmt);
@@ -233,11 +230,11 @@ size_t error_node_token(struct node_s *node, struct token_s *token, const char *
 
 int add_node(struct node_s *node)
 {
-	log_node_token(node, node->token, "+ add_node(): Adding to %s\n", 
+	log_node_token(node, node->token, "+ add_node(): Adding to %s\n",
 		node_type_names[node->parent->type]);
 
 	if (node->mergeable && node->nsubnodes==1u) {
-		log_node_token(node, node->token, "+ add_node(): Merging subnode %s\n", 
+		log_node_token(node, node->token, "+ add_node(): Merging subnode %s\n",
 			node_type_names[node->subnodes[0]->type]);
 
 		/* TODO: This node will not be freed. Consider if it is needed to save space */
@@ -252,16 +249,14 @@ int add_node(struct node_s *node)
 	return 0;
 }
 
-
-
 size_t free_node(struct node_s *node)
 {
 	size_t ix;
 
-/*	log_node_token(node, node->token, "- free_node(): Freeing from %s\n", 
+/*	log_node_token(node, node->token, "- free_node(): Freeing from %s\n",
 		node_type_names[node->parent->type]);*/
 
-	if (node->parent 
+	if (node->parent
 			&& node->parent->nsubnodes > 0u
 			&& node->parent->subnodes[node->parent->nsubnodes-1]==node) {
 		--node->parent->nsubnodes;
@@ -281,7 +276,6 @@ void free_last_sub_node(struct node_s *node)
 		nodefree(node->subnodes[node->nsubnodes]);
 	}
 }
-
 
 static void indent(int ind)
 {
@@ -325,12 +319,9 @@ void print_node_json(struct node_s *node, int ind)
 	putchar('}');
 
 	for (ix=0; ix<node->nsubnodes; ++ix) {
-		puts(","); 
+		puts(",");
 		print_node_json(node->subnodes[ix], ind+1);
 	}
 
 	(void)putchar(']');
 }
-
-
-
