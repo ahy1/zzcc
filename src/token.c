@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <string.h>
 
-
 static const char *token_type_names[]={
 	"TT_NULL",
 	"TT_END",
@@ -643,5 +642,3 @@ void print_token(const char *prefix, const struct token_s *token)
 {
 	printf("%s %d:%d [%s](%s/%d)\n", prefix, token->lno, token->cno, token_text(token), token_type(token), token->subtype);
 }
-
-

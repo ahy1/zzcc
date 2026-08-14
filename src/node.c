@@ -325,3 +325,27 @@ void print_node_json(struct node_s *node, int ind)
 
 	(void)putchar(']');
 }
+
+struct node_s *get_subnode_by_type(struct node_s *node, int type)
+{
+	size_t ix;
+
+	for (ix=0; ix<node->nsubnodes; ++ix) {
+		if (node->subnodes[ix]->type == type) {
+			return node->subnodes[ix];
+		}
+	}
+
+	return NULL;
+}
+
+struct node_s* get_subnode_by_typepath(struct node_s* node, int *types, size_t ntypes)
+{
+	while (ntypes) {
+		if (!(node=get_subnode_by_type(node, *types))) return NULL;
+		++types;
+		--ntypes;
+	}
+
+	return node;
+}

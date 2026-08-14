@@ -16,6 +16,8 @@ SRC := \
 	src/strbuf.c \
 	src/token.c \
 	src/tokenclass.c \
+	src/gen.c \
+	src/zzcc.c \
 	src/zzcpp.c \
 	src/zzparser.c
 
@@ -27,13 +29,16 @@ LDFLAGS=-Wall -g3 -glldb
 
 .PHONY: all
 
-all: ${BUILD_DIR}/zzparser ${BUILD_DIR}/zzcpp
+all: ${BUILD_DIR}/zzparser ${BUILD_DIR}/zzcpp ${BUILD_DIR}/zzcc
 
 ${BUILD_DIR}/zzparser: ${OBJ} | ${BUILD_DIR}
-	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzcpp.o,$^)
+	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzcpp.o ${BUILD_DIR}/src/zzcc.o,$^)
 
 ${BUILD_DIR}/zzcpp: ${OBJ} | ${BUILD_DIR}
-	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzparser.o,$^)
+	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzparser.o ${BUILD_DIR}/src/zzcc.o,$^)
+
+${BUILD_DIR}/zzcc: ${OBJ} | ${BUILD_DIR}
+	${LD} -o $@ ${LDFLAGS} $(filter-out ${BUILD_DIR}/src/zzparser.o ${BUILD_DIR}/src/zzcpp.o,$^)
 
 ${BUILD_DIR}/%.o: %.c Makefile | ${BUILD_DIR}/src
 	${CC} -o $@ ${CFLAGS} -c $<

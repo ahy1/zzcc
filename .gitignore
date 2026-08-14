@@ -6,3 +6,4 @@ build/
 notes/
 ref/
 .vs
+*.s

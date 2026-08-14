@@ -31,14 +31,14 @@ enum {
 	PRIMARY_EXPRESSION,
 	TYPE_NAME,
 	DESIGNATOR,
-	DESIGNATION,	
+	DESIGNATION,
 	DESIGNATION_INITIALIZER,
 	INITIALIZER_LIST,
 	ARGUMENT_EXPRESSION_LIST,
 	POSTFIX_EXPRESSION,
 	UNARY_OPERATOR,
 	CAST_EXPRESSION,
-	UNARY_EXPRESSION,	
+	UNARY_EXPRESSION,
 	ASSIGNMENT_EXPRESSION,
 	DIRECT_ABSTRACT_DECLARATOR,
 	ABSTRACT_DECLARATOR,
@@ -115,6 +115,8 @@ size_t free_node(struct node_s *node);
 void free_last_sub_node(struct node_s *node);
 void print_node(struct node_s *node, int ind);
 void print_node_json(struct node_s *node, int ind);
+struct node_s *get_subnode_by_type(struct node_s *node, int type);
+struct node_s* get_subnode_by_typepath(struct node_s* node, int *types, size_t ntypes);
 
 #endif
 

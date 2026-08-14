@@ -9,7 +9,8 @@
             "args": [
                 "${input:args}"
             ],
-            "cwd": "${fileDirname}"
+            "cwd": "${fileDirname}",
+            "preLaunchTask": "make"
         },
         {
             "name": "CodeLLDB: Launch zzparser",
@@ -19,7 +20,19 @@
             "args": [
                 "${input:args}"
             ],
-            "cwd": "${fileDirname}"
+            "cwd": "${fileDirname}",
+            "preLaunchTask": "make"
+        },
+        {
+            "name": "CodeLLDB: Launch zzcc",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/zzcc",
+            "args": [
+                "${input:args}"
+            ],
+            "cwd": "${fileDirname}",
+            "preLaunchTask": "make"
         }
     ],
     "inputs": [
