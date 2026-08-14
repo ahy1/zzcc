@@ -34,6 +34,12 @@ void gen_code_asm_amd64(struct node_s *node, FILE *fp)
 
 			fprintf(fp, "\t.global %s\n", token_text(funcid->token));
 			fprintf(fp, "%s:\n", token_text(funcid->token));
+			fprintf(fp, "\tpushq %%rbp\n");
+			fprintf(fp, "\tmovq %%rsp,%%rbp\n");
+
+			fprintf(fp, "\tmovq %%rbp,%%rsp\n");
+			fprintf(fp, "\tpopq %%rbp\n");
+			fprintf(fp, "\tret\n");
 		}
 	}
 }
