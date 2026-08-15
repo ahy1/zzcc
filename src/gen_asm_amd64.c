@@ -5,11 +5,14 @@
 
 static void gen_expr(struct node_s *node, FILE *fp)
 {
+	int intval;
+
 	if (node->nsubnodes!=1) return;
 
 	switch (node->subnodes[0]->type) {
 	case CONSTANT:
-		fprintf(fp, "\tmovl $%d, %%eax\n", 0);
+		intval = atoi(token_text(node->subnodes[0]->token));
+		fprintf(fp, "\tmovl $%d, %%eax\n", intval);
 	default:;
 	}
 }
