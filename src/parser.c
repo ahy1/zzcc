@@ -7,7 +7,7 @@
 #include <string.h>
 
 #define LOG_PARSER(s) fprintf(stderr, " >> %s (%d) >> %s >> ix=%d >> %s\n", __func__, node->level, (s), (int)ix, token_text(tokens[ix]))
-//#define LOG_PARSER(s) 
+//#define LOG_PARSER(s)
 
 struct node_s *g_root_node=NULL;
 
@@ -24,7 +24,7 @@ static int add_typealias_node(struct node_s *node)
 {
 	const char *text=token_text(node->token);
 
-	log_node_token(node, node->token, "@ add_typealias(): Adding to %s\n", 
+	log_node_token(node, node->token, "@ add_typealias(): Adding to %s\n",
 		node_type_name(node->scope_parent));
 
 	return add_typealias_text(node->scope_parent, text);
@@ -255,32 +255,32 @@ static size_t inline_asm(struct node_s *parent, struct token_s **tokens)
 
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION, 
+	return separated_any_token(parent, tokens, MULTIPLICATIVE_EXPRESSION,
 		cast_expression, 3, (int []) {TT_STAR_OP, TT_SLASH_OP, TT_PERCENT_OP}, 1);
 }
 
 static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, ADDITIVE_EXPRESSION, 
+	return separated_any_token(parent, tokens, ADDITIVE_EXPRESSION,
 		multiplicative_expression, 2, (int []) {TT_PLUS_OP, TT_MINUS_OP}, 1);
 }
 
 static size_t shift_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, SHIFT_EXPRESSION, 
+	return separated_any_token(parent, tokens, SHIFT_EXPRESSION,
 		additive_expression, 2, (int []) {TT_LEFTSHIFT_OP, TT_RIGHTSHIFT_OP}, 1);
 }
 
 static size_t relational_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, RELATIONAL_EXPRESSION, 
+	return separated_any_token(parent, tokens, RELATIONAL_EXPRESSION,
 		shift_expression,
 		4, (int []) {TT_LESSTHAN_OP, TT_GREATERTHAN_OP, TT_LESSTHAN_EQUAL_OP, TT_GREATERTHAN_EQUAL_OP}, 1);
 }
 
 static size_t equality_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, EQUALITY_EXPRESSION, 
+	return separated_any_token(parent, tokens, EQUALITY_EXPRESSION,
 		relational_expression, 2, (int []) {TT_EQUAL_OP, TT_NOT_EQUAL_OP}, 1);
 }
 
@@ -341,7 +341,7 @@ static size_t primary_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed;
 	struct node_s *node=create_any_node(parent, PRIMARY_EXPRESSION, tokens[0], 0, 0);
-	
+
 	if ((parsed=identifier(node, tokens))
 		|| (parsed=single_token_any_of(node, tokens, CONSTANT, 2, (int []){TT_CHARACTER, TT_NUMBER}))
 		|| (parsed=single_token(node, tokens, STRING_LITERAL, TT_STRING))) return add_node(node), parsed;
@@ -460,8 +460,8 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 	}
 
 	//LOG_PARSER("Moving on to actual postfix part");
-      
-	/* The actual postfix part */	
+
+	/* The actual postfix part */
 	if (ix>0u) {
 		LOG_PARSER("Yes we have parsed something already");
 		found_postfix=1;
@@ -477,7 +477,7 @@ static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 				break;
 			case TT_LEFT_PARANTHESIS:
 				++ix;
-				if ((parsed=separated(node, tokens+ix, ARGUMENT_EXPRESSION_LIST, assignment_expression, TT_COMMA_OP, 0, 0))) 
+				if ((parsed=separated(node, tokens+ix, ARGUMENT_EXPRESSION_LIST, assignment_expression, TT_COMMA_OP, 0, 0)))
 					ix+=parsed;
 				if (tokens[ix]->type==TT_RIGHT_PARANTHESIS) ++ix;
 				else error_node_token(node, tokens[ix], "[postfix_expression()] Expected closing paranthesis");
@@ -582,7 +582,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 		++ix;
 
 		//LOG_PARSER("Found ++/--");
-		
+
 		if ((parsed=unary_expression(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "[unary_expression()] Expected unary-expression");
 	} else if ((parsed=unary_operator(node, tokens+ix))) {
@@ -661,7 +661,7 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 			LOG_PARSER("1a");
 
 			if ((parsed=assignment_expression(node, tokens+ix))) ix+=parsed;
-			else error_node_token(node, tokens[ix], 
+			else error_node_token(node, tokens[ix],
 					"[assignment_expression()] Expected assignment-expression");
 
 			LOG_PARSER("1b");
@@ -671,10 +671,10 @@ static size_t assignment_expression(struct node_s *parent, struct token_s **toke
 			free_last_sub_node(node);
 			ix=0u;
 		}
-	} 
+	}
 
 	LOG_PARSER("Trying conditional?");
-	
+
 	if ((parsed=conditional_expression(node, tokens+ix))) {
 		ix+=parsed;
 		LOG_PARSER("Parsed conditional expression");
@@ -861,7 +861,7 @@ static size_t enumerator(struct node_s *parent, struct token_s **tokens)
 
 	if (tokens[ix]->type==TT_ASSIGNMENT_OP) {
 		++ix;
-	
+
 		if ((parsed=constant_expression(node, tokens+ix))) ix+=parsed;
 		else error_node_token(node, tokens[ix], "Expected constant expression");
 	}
@@ -886,7 +886,7 @@ static size_t enum_specifier(struct node_s *parent, struct token_s **tokens)
 			else error_node_token(node, tokens[ix], "Expected enumerator list");
 
 			if (tokens[ix]->type==TT_COMMA_OP) ++ix;
-			
+
 			if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 			else error_node_token(node, tokens[ix], "Expected closing brace");
 		}
@@ -948,7 +948,7 @@ static size_t function_specifier(struct node_s *parent, struct token_s **tokens)
 
 static size_t alignment_specifier(struct node_s *parent, struct token_s **tokens)
 {
-	size_t parsed, ix=0; 
+	size_t parsed, ix=0;
 	struct node_s *node=create_node(parent, ALIGNMENT_SPECIFIER, tokens[0]);
 
 	if (tokens[ix]->type==TT_ALIGNOF) {
@@ -1028,8 +1028,8 @@ static size_t direct_declarator(struct node_s *parent, struct token_s **tokens)
 	struct node_s *node=create_any_node(parent, DIRECT_DECLARATOR, tokens[0], 0, 0);
 	int tt;
 
-	/* identifier 
-	| "(" declarator ")" 
+	/* identifier
+	| "(" declarator ")"
 	| direct-declarator "[" type-qualifier-list? assignment-expression? "]"
 	| direct-declarator "[" "static" type-qualifier-list? assignment-expression? "]"
 	| direct-declarator "[" type-qualifier-list? "static" assignment-expression? "]"
@@ -1396,7 +1396,7 @@ static size_t compound_statement(struct node_s *parent, struct token_s **tokens)
 	if (tokens[ix]->type==TT_LEFT_CURLY) ++ix;
 	else return free_node(node);
 
-	if ((parsed=many(node, tokens+ix, BLOCK_ITEM_LIST, block_item, 1))) ix+=parsed;
+	if ((parsed=many(node, tokens+ix, BLOCK_ITEM_LIST, block_item, 0))) ix+=parsed;
 
 	if (tokens[ix]->type==TT_RIGHT_CURLY) ++ix;
 	else error_node_token(node, tokens[ix], "Missing right curly brace - } at end of compound statement");
