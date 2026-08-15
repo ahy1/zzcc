@@ -10,19 +10,11 @@ void gen_code_asm_amd64(struct node_s *node, FILE *fp)
 	struct node_s *tunit, *funcdef, *funcid;
 	size_t ix;
 
-	if (node->type!=NT_ROOT
-			|| node->nsubnodes!=1
-			|| node->subnodes[0]->type!=NT_UNIT
-			|| node->subnodes[0]->nsubnodes!=1
-			|| node->subnodes[0]->subnodes[0]->type!=TRANSLATION_UNIT) {
-		return;
-	}
+	if (!(tunit=get_subnode_by_typepath(node, (int[]) {NT_UNIT, TRANSLATION_UNIT}, 2))) return;
 
 	fprintf(fp, "\t.text\n");
 	fprintf(fp, "\tp2align 4\n");
 	fprintf(fp, "\n");
-
-	tunit = node->subnodes[0]->subnodes[0];
 
 	for (ix=0; ix<tunit->nsubnodes; ++ix) {
 		if (tunit->subnodes[ix]->type==FUNCTION_DEFINITION) {
