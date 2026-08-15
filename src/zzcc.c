@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
 	int lno=1, cno=0;
 	struct token_s end_token={NULL, 0, TT_END, 0, 0, NULL, 0, 0};
 	size_t parsed;
-	const char *target=NULL;
 
 	sb=sballoc(1024);
 

@@ -1222,7 +1222,7 @@ static size_t labeled_statement(struct node_s *parent, struct token_s **tokens)
 
 static size_t expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP, 0, 1);
+	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP, 0, 0);
 }
 
 static size_t selection_statement(struct node_s *parent, struct token_s **tokens)

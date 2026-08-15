@@ -17,6 +17,7 @@ SRC := \
 	src/token.c \
 	src/tokenclass.c \
 	src/gen.c \
+	src/gen_asm_amd64.c \
 	src/zzcc.c \
 	src/zzcpp.c \
 	src/zzparser.c
