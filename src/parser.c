@@ -340,7 +340,7 @@ static size_t conditional_expression(struct node_s *parent, struct token_s **tok
 static size_t primary_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed;
-	struct node_s *node=create_any_node(parent, PRIMARY_EXPRESSION, tokens[0], 0, 0);
+	struct node_s *node=create_any_node(parent, PRIMARY_EXPRESSION, tokens[0], 1, 0);
 
 	if ((parsed=identifier(node, tokens))
 		|| (parsed=single_token_any_of(node, tokens, CONSTANT, 2, (int []){TT_CHARACTER, TT_NUMBER}))
@@ -421,7 +421,7 @@ static size_t initializer_list(struct node_s *parent, struct token_s **tokens)
 static size_t postfix_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_any_node(parent, POSTFIX_EXPRESSION, tokens[0], 0, 0);
+	struct node_s *node=create_any_node(parent, POSTFIX_EXPRESSION, tokens[0], 1, 0);
 	int found_postfix;
 
 	//LOG_PARSER("Start");
@@ -563,7 +563,7 @@ static size_t cast_expression(struct node_s *parent, struct token_s **tokens)
 static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_any_node(parent, UNARY_EXPRESSION, tokens[0], 0, 0);
+	struct node_s *node=create_any_node(parent, UNARY_EXPRESSION, tokens[0], 1, 0);
 
 	/*
 	 * : postfix_expression
@@ -632,7 +632,7 @@ static size_t unary_expression(struct node_s *parent, struct token_s **tokens)
 static size_t assignment_expression(struct node_s *parent, struct token_s **tokens)
 {
 	size_t parsed, ix=0u;
-	struct node_s *node=create_any_node(parent, ASSIGNMENT_EXPRESSION, tokens[0], 0, 0);
+	struct node_s *node=create_any_node(parent, ASSIGNMENT_EXPRESSION, tokens[0], 1, 0);
 
 	LOG_PARSER("Start");
 
@@ -1222,7 +1222,7 @@ static size_t labeled_statement(struct node_s *parent, struct token_s **tokens)
 
 static size_t expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP, 0, 0);
+	return separated(parent, tokens, EXPRESSION, assignment_expression, TT_COMMA_OP, 0, 1);
 }
 
 static size_t selection_statement(struct node_s *parent, struct token_s **tokens)
