@@ -73,22 +73,9 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 
 static void gen_expr(struct node_s *node, FILE *fp, int treg)
 {
-	int intval;
-
 	if (node->nsubnodes!=1) return;
 
 	gen_expr_node(node->subnodes[0], fp, treg);
-/*
-	switch (node->subnodes[0]->type) {
-	case CONSTANT:
-		intval = atoi(token_text(node->subnodes[0]->token));
-		fprintf(fp, "\tmovl $%d, %%%s\n", intval, regs[treg].name32);
-		break;
-	case ADDITIVE_EXPRESSION:
-		gen_expr_add(node->subnodes[0], fp, treg);
-		break;
-	default:;
-	}*/
 }
 
 static void gen_block(struct node_s *node, FILE *fp)
