@@ -45,7 +45,7 @@ void gen_code_asm_amd64(struct node_s *node, FILE *fp)
 	if (!(tunit=get_subnode_by_typepath(node, (int[]) {NT_UNIT, TRANSLATION_UNIT}, 2))) return;
 
 	fprintf(fp, "\t.text\n");
-	fprintf(fp, "\tp2align 4\n");
+	fprintf(fp, "\t.p2align 4\n");
 	fprintf(fp, "\n");
 
 	for (ix=0; ix<tunit->nsubnodes; ++ix) {
