@@ -55,6 +55,23 @@ static void gen_expr_add(struct node_s *node, FILE *fp, int treg)
 	regs[rreg].taken = 0;
 }
 
+static void gen_expr_sub(struct node_s *node, FILE *fp, int treg)
+{
+	int rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	gen_expr_node(node->subnodes[0], fp, treg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\tsubl %%%s, %%%s\n", regs[rreg].name32, regs[treg].name32);
+
+	regs[rreg].taken = 0;
+}
+
 static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 {
 	int intval;
@@ -64,8 +81,11 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 		intval = atoi(token_text(node->token));
 		fprintf(fp, "\tmovl $%d, %%%s\n", intval, regs[treg].name32);
 		break;
-	case ADDITIVE_EXPRESSION:
+	case ADD_EXPRESSION:
 		gen_expr_add(node, fp, treg);
+		break;
+	case SUB_EXPRESSION:
+		gen_expr_sub(node, fp, treg);
 		break;
 	default:;
 	}
