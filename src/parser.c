@@ -261,8 +261,24 @@ static size_t multiplicative_expression(struct node_s *parent, struct token_s **
 
 static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, ADDITIVE_EXPRESSION,
-		multiplicative_expression, 2, (int []) {TT_PLUS_OP, TT_MINUS_OP}, 1);
+	size_t parsed, ix=0u;
+	struct node_s *node=create_mergeable_node(parent, ADDITIVE_EXPRESSION, tokens[0]);
+	int op;
+
+	if ((parsed=multiplicative_expression(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	op = tokens[ix]->type;
+	if (op==TT_PLUS_OP || op==TT_MINUS_OP) {
+		++ix;
+
+		if ((parsed=additive_expression(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
+
+		node->type = op==TT_PLUS_OP ? ADD_EXPRESSION : SUB_EXPRESSION;
+	}
+
+	return add_node(node), ix;
 }
 
 static size_t shift_expression(struct node_s *parent, struct token_s **tokens)
