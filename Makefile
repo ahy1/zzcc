@@ -60,3 +60,17 @@ clean:
 test:
 	(cd tests; ./runtests.sh)
 
+.PHONY: testparser
+
+testparser:
+	(cd tests; ./runparsertests.sh)
+
+.PHONY: testcpp
+
+testcpp:
+	(cd tests; ./runcpptests.sh)
+
+.PHONY: testcc
+
+testcc:
+	(cd tests; ./runcctests.sh)
