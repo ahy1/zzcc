@@ -1,4 +1,4 @@
 int main(void)
 {
-	return 1;
+	return ((40*2)+8-4)/2;
 }
