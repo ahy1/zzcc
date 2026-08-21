@@ -301,26 +301,14 @@ static size_t inline_asm(struct node_s *parent, struct token_s **tokens)
 
 static size_t multiplicative_expression(struct node_s *parent, struct token_s **tokens)
 {
-	size_t parsed, ix=0u;
-	struct node_s *node=create_mergeable_node(parent, MULTIPLICATIVE_EXPRESSION, tokens[0]);
-	int op;
-
-	if ((parsed=cast_expression(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	op = tokens[ix]->type;
-	if (op==TT_STAR_OP || op==TT_SLASH_OP || op==TT_PERCENT_OP) {
-		++ix;
-
-		if ((parsed=multiplicative_expression(node, tokens+ix))) ix+=parsed;
-		else return free_node(node);
-
-		node->type = op==TT_STAR_OP ? MUL_EXPRESSION :
-				op==TT_SLASH_OP ? DIV_EXPRESSION :
-					MOD_EXPRESSION;
-	}
-
-	return add_node(node), ix;
+	return left_assoc(
+		parent,
+		tokens,
+		cast_expression,
+		3,
+		(int []) {TT_STAR_OP, TT_SLASH_OP, TT_PERCENT_OP},
+		(int []) {MUL_EXPRESSION, DIV_EXPRESSION, MOD_EXPRESSION},
+		1);
 }
 
 static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
