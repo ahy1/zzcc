@@ -72,6 +72,40 @@ static void gen_expr_sub(struct node_s *node, FILE *fp, int treg)
 	regs[rreg].taken = 0;
 }
 
+static void gen_expr_mul(struct node_s *node, FILE *fp, int treg)
+{
+	int rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	gen_expr_node(node->subnodes[0], fp, treg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\timul %%%s, %%%s\n", regs[rreg].name32, regs[treg].name32);
+
+	regs[rreg].taken = 0;
+}
+
+static void gen_expr_div(struct node_s *node, FILE *fp, int treg)
+{
+	int rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	gen_expr_node(node->subnodes[0], fp, treg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\tidiv %%%s, %%%s\n", regs[rreg].name32, regs[treg].name32);
+
+	regs[rreg].taken = 0;
+}
+
 static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 {
 	int intval;
@@ -86,6 +120,12 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 		break;
 	case SUB_EXPRESSION:
 		gen_expr_sub(node, fp, treg);
+		break;
+	case MUL_EXPRESSION:
+		gen_expr_mul(node, fp, treg);
+		break;
+	case DIV_EXPRESSION:
+		gen_expr_div(node, fp, treg);
 		break;
 	default:;
 	}
