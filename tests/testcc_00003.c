@@ -1,4 +1,4 @@
 int main(void)
 {
-	return 43-1-42;
+	return 42/2-21;
 }
