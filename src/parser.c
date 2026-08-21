@@ -139,30 +139,20 @@ static size_t left_assoc(struct node_s *parent, struct token_s **tokens,
 	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 	else return free_node(node);
 
-	tt = tokens[ix]->type;
-	if ((ttix=get_index_of(tt, num_separators, tt_separators))>=0) {
+	while ((ttix=get_index_of((tt = tokens[ix]->type), num_separators, tt_separators))>=0) {
+		nnode = create_any_node(parent, 0, tokens[0], mergeable, 0);
+
+		set_node_parent(node, nnode);
+		add_node(node);
+
 		++ix;
+
+		node = nnode;
 
 		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
 		else return free_node(node);
 
 		node->type = nt_nodes[ttix];
-
-		while ((ttix=get_index_of((tt = tokens[ix]->type), num_separators, tt_separators))>=0) {
-			nnode = create_any_node(parent, 0, tokens[0], mergeable, 0);
-
-			set_node_parent(node, nnode);
-			add_node(node);
-
-			++ix;
-
-			node = nnode;
-
-			if ((parsed=pf(node, tokens+ix))) ix+=parsed;
-			else return free_node(node);
-
-			node->type = nt_nodes[ttix];
-		}
 	}
 
 	// TODO: Fix levels
