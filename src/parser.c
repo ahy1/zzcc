@@ -88,6 +88,17 @@ static int is_any_of(int what, size_t num_alts, int *alts)
 	return 0;
 }
 
+static int get_index_of(int what, size_t num_alts, int *alts)
+{
+	size_t i;
+
+	for (i=0u; i<num_alts; ++i) {
+		if (what==alts[i]) return i;
+	}
+
+	return -1;
+}
+
 static size_t separated_any_token(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **),
 	size_t num_separators, int *tt_separators,
@@ -110,6 +121,51 @@ static size_t separated_any_token(struct node_s *parent, struct token_s **tokens
 			else return free_node(node);
 		}
 	}
+
+	return add_node(node), ix;
+}
+
+static size_t left_assoc(struct node_s *parent, struct token_s **tokens,
+	size_t (*pf)(struct node_s *, struct token_s **),
+	size_t num_separators, int *tt_separators, int *nt_nodes,
+	int mergeable)
+{
+	size_t parsed, ix=0u;
+	struct node_s *node=create_any_node(parent, 0, tokens[0], mergeable, 0);
+	struct node_s *nnode;
+	int tt;
+	int ttix;
+
+	if ((parsed=pf(node, tokens+ix))) ix+=parsed;
+	else return free_node(node);
+
+	tt = tokens[ix]->type;
+	if ((ttix=get_index_of(tt, num_separators, tt_separators))>=0) {
+		++ix;
+
+		if ((parsed=pf(node, tokens+ix))) ix+=parsed;
+		else return free_node(node);
+
+		node->type = nt_nodes[ttix];
+
+		while ((ttix=get_index_of((tt = tokens[ix]->type), num_separators, tt_separators))>=0) {
+			nnode = create_any_node(parent, 0, tokens[0], mergeable, 0);
+
+			set_node_parent(node, nnode);
+			add_node(node);
+
+			++ix;
+
+			node = nnode;
+
+			if ((parsed=pf(node, tokens+ix))) ix+=parsed;
+			else return free_node(node);
+
+			node->type = nt_nodes[ttix];
+		}
+	}
+
+	// TODO: Fix levels
 
 	return add_node(node), ix;
 }
@@ -279,24 +335,14 @@ static size_t multiplicative_expression(struct node_s *parent, struct token_s **
 
 static size_t additive_expression(struct node_s *parent, struct token_s **tokens)
 {
-	size_t parsed, ix=0u;
-	struct node_s *node=create_mergeable_node(parent, ADDITIVE_EXPRESSION, tokens[0]);
-	int op;
-
-	if ((parsed=multiplicative_expression(node, tokens+ix))) ix+=parsed;
-	else return free_node(node);
-
-	op = tokens[ix]->type;
-	if (op==TT_PLUS_OP || op==TT_MINUS_OP) {
-		++ix;
-
-		if ((parsed=additive_expression(node, tokens+ix))) ix+=parsed;
-		else return free_node(node);
-
-		node->type = op==TT_PLUS_OP ? ADD_EXPRESSION : SUB_EXPRESSION;
-	}
-
-	return add_node(node), ix;
+	return left_assoc(
+		parent,
+		tokens,
+		multiplicative_expression,
+		2,
+		(int []) {TT_PLUS_OP, TT_MINUS_OP},
+		(int []) {ADD_EXPRESSION, SUB_EXPRESSION},
+		1);
 }
 
 static size_t shift_expression(struct node_s *parent, struct token_s **tokens)

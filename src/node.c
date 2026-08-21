@@ -171,16 +171,21 @@ static void nodefree(struct node_s *node)
 #endif
 }
 
-struct node_s *create_node(struct node_s *parent, int type, struct token_s *token)
+void set_node_parent(struct node_s *node, struct node_s *parent)
 {
-	struct node_s *node=nodealloc();
-	if (!node) return NULL;
-
 	node->parent=parent;
 	node->scope_parent=parent->scope_parent;
 	if (parent->type==COMPOUND_STATEMENT || parent->type==TRANSLATION_UNIT)
 		node->scope_parent=parent;
 	node->level=node->parent->level+1;
+}
+
+struct node_s *create_node(struct node_s *parent, int type, struct token_s *token)
+{
+	struct node_s *node=nodealloc();
+	if (!node) return NULL;
+
+	set_node_parent(node, parent);
 	node->type=type;
 	node->in_typedef_declaration=node->parent->in_typedef_declaration;
 	node->token=token;

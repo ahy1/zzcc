@@ -110,6 +110,7 @@ struct node_s {
 
 const char *node_type_name(struct node_s *node);
 void log_node_token(struct node_s *node, struct token_s *token, const char *fmt, ...);
+void set_node_parent(struct node_s *node, struct node_s *parent);
 struct node_s *create_node(struct node_s *parent, int type, struct token_s *token);
 struct node_s *create_mergeable_node(struct node_s *parent, int type, struct token_s *token);
 struct node_s *create_any_node(struct node_s *parent, int type, struct token_s *token, int mergeable, int has_token);
