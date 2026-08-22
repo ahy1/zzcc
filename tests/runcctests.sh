@@ -21,7 +21,8 @@ for fname in testcc_*.c; do
 
 	out/a.exe
 	if test $? != 0; then
-		echo " >>> Failed"
+		echo " >>> Failed: $?"
+		exit
 	fi
 
 	echo "" >>"$outfname"
