@@ -101,7 +101,32 @@ static void gen_expr_div(struct node_s *node, FILE *fp, int treg)
 	regs[rreg].taken = 1;
 	gen_expr_node(node->subnodes[1], fp, rreg);
 
-	fprintf(fp, "\tidiv %%%s, %%%s\n", regs[rreg].name32, regs[treg].name32);
+	fprintf(fp, "\tcqo\n");
+	fprintf(fp, "\tidiv %%%s\n", regs[rreg].name32);
+	if (treg!=0) { /* Different from EAX? */
+		fprintf(fp, "\tmov %%eax, %%%s\n", regs[treg].name32);
+	}
+
+	regs[rreg].taken = 0;
+}
+
+static void gen_expr_mod(struct node_s *node, FILE *fp, int treg)
+{
+	int rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	gen_expr_node(node->subnodes[0], fp, treg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\tcqo\n");
+	fprintf(fp, "\tidiv %%%s\n", regs[rreg].name32);
+	if (treg!=3) { /* Different from EDX? */
+		fprintf(fp, "\tmov %%edx, %%%s\n", regs[treg].name32);
+	}
 
 	regs[rreg].taken = 0;
 }
@@ -126,6 +151,9 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 		break;
 	case DIV_EXPRESSION:
 		gen_expr_div(node, fp, treg);
+		break;
+	case MOD_EXPRESSION:
+		gen_expr_mod(node, fp, treg);
 		break;
 	default:;
 	}
