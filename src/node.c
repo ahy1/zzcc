@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <assert.h>
 
 #include "stack.h"
 #include "json.h"
@@ -93,6 +94,8 @@ static const char *node_type_names[]={
 	"NT_UNIT",
 	"NT_DUMMY"
 };
+
+static_assert(sizeof node_type_names / sizeof node_type_names[0] == NT_DUMMY+1, "Number of elements must match number of enum values");
 
 const char *node_type_name(struct node_s *node)
 {
