@@ -325,8 +325,14 @@ static size_t additive_expression(struct node_s *parent, struct token_s **tokens
 
 static size_t shift_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, SHIFT_EXPRESSION,
-		additive_expression, 2, (int []) {TT_LEFTSHIFT_OP, TT_RIGHTSHIFT_OP}, 1);
+	return left_assoc(
+		parent,
+		tokens,
+		additive_expression,
+		2,
+		(int []) {TT_LEFTSHIFT_OP, TT_RIGHTSHIFT_OP},
+		(int []) {LSHIFT_EXPRESSION, RSHIFT_EXPRESSION},
+		1);
 }
 
 static size_t relational_expression(struct node_s *parent, struct token_s **tokens)
