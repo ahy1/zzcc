@@ -14,6 +14,7 @@ for fname in testcpp_*.c; do
 	../build/zzcpp <"$fname" 2>>"$errfname" >>"$outfname"
 	if test $? != 0; then
 		echo " >>> Failed"
+		exit
 	fi
 
 	echo "" >>"$outfname"

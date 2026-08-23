@@ -14,7 +14,7 @@ for fname in test_*.c; do
 	../build/zzparser <"$fname" 2>>"$errfname" >>"$outfname"
 	if test $? != 0; then
 		echo " >>> Failed"
-#		break
+		exit
 	fi
 
 	echo "" >>"$outfname"
