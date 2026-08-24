@@ -337,9 +337,14 @@ static size_t shift_expression(struct node_s *parent, struct token_s **tokens)
 
 static size_t relational_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, RELATIONAL_EXPRESSION,
+	return left_assoc(
+		parent,
+		tokens,
 		shift_expression,
-		4, (int []) {TT_LESSTHAN_OP, TT_GREATERTHAN_OP, TT_LESSTHAN_EQUAL_OP, TT_GREATERTHAN_EQUAL_OP}, 1);
+		4,
+		(int []) {TT_LESSTHAN_OP, TT_GREATERTHAN_OP, TT_LESSTHAN_EQUAL_OP, TT_GREATERTHAN_EQUAL_OP},
+		(int []) {LT_EXPRESSION, GT_EXPRESSION, LTE_EXPRESSION, GTE_EXPRESSION},
+		1);
 }
 
 static size_t equality_expression(struct node_s *parent, struct token_s **tokens)
