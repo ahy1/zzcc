@@ -17,11 +17,14 @@ for fname in testcc_*.c; do
 		echo " >>> Failed"
 	fi
 
+	cat a.s
+
 	gcc -o out/a.exe a.s
 
 	out/a.exe
-	if test $? != 0; then
-		echo " >>> Failed: $?"
+	res="$?"
+	if test $res != 0; then
+		echo " >>> Failed: $res"
 		exit
 	fi
 
