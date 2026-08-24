@@ -131,11 +131,48 @@ static void gen_expr_mod(struct node_s *node, FILE *fp, int treg)
 	regs[rreg].taken = 0;
 }
 
+static void gen_expr_lshift(struct node_s *node, FILE *fp, int treg)
+{
+	int rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	gen_expr_node(node->subnodes[0], fp, treg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\tshl %%%s, %%%s\n", regs[rreg].name8, regs[treg].name32);
+
+	regs[rreg].taken = 0;
+}
+
+static void gen_expr_rshift(struct node_s *node, FILE *fp, int treg)
+{
+	int rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	gen_expr_node(node->subnodes[0], fp, treg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\tshr %%%s, %%%s\n", regs[rreg].name8, regs[treg].name32);
+
+	regs[rreg].taken = 0;
+}
+
 static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 {
 	int intval;
 
 	switch (node->type) {
+	case EXPRESSION:
+		if (node->nsubnodes!=1) return;
+		return gen_expr_node(node->subnodes[0], fp, treg);
 	case CONSTANT:
 		intval = atoi(token_text(node->token));
 		fprintf(fp, "\tmovl $%d, %%%s\n", intval, regs[treg].name32);
@@ -154,6 +191,12 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 		break;
 	case MOD_EXPRESSION:
 		gen_expr_mod(node, fp, treg);
+		break;
+	case LSHIFT_EXPRESSION:
+		gen_expr_lshift(node, fp, treg);
+		break;
+	case RSHIFT_EXPRESSION:
+		gen_expr_rshift(node, fp, treg);
 		break;
 	default:;
 	}
