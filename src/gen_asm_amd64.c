@@ -165,7 +165,7 @@ static void gen_expr_rshift(struct node_s *node, FILE *fp, int treg)
 	regs[rreg].taken = 0;
 }
 
-static void gen_expr_lt(struct node_s *node, FILE *fp, int treg)
+static void gen_expr_cmp(struct node_s *node, FILE *fp, int treg)
 {
 	int lreg, rreg;
 
@@ -181,8 +181,20 @@ static void gen_expr_lt(struct node_s *node, FILE *fp, int treg)
 
 	fprintf(fp, "\txor %%%s, %%%s\n", regs[treg].name32, regs[treg].name32);
 	fprintf(fp, "\tcmp %%%s, %%%s\n", regs[rreg].name32, regs[lreg].name32);
-	fprintf(fp, "\tsetl %%%s\n", regs[treg].name8);
-
+	switch (node->type) {
+	case LT_EXPRESSION:
+		fprintf(fp, "\tsetl %%%s\n", regs[treg].name8);
+		break;
+	case GT_EXPRESSION:
+		fprintf(fp, "\tsetg %%%s\n", regs[treg].name8);
+		break;
+	case LTE_EXPRESSION:
+		fprintf(fp, "\tsetle %%%s\n", regs[treg].name8);
+		break;
+	case GTE_EXPRESSION:
+		fprintf(fp, "\tsetge %%%s\n", regs[treg].name8);
+		break;
+	}
 	regs[lreg].taken = 0;
 	regs[rreg].taken = 0;
 }
@@ -221,17 +233,11 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 		gen_expr_rshift(node, fp, treg);
 		break;
 	case LT_EXPRESSION:
-		gen_expr_lt(node, fp, treg);
-		break;
-/*	case GT_EXPRESSION:
-		gen_expr_gt(node, fp, treg);
-		break;
+	case GT_EXPRESSION:
 	case LTE_EXPRESSION:
-		gen_expr_lte(node, fp, treg);
-		break;
 	case GTE_EXPRESSION:
-		gen_expr_gte(node, fp, treg);
-		break;*/
+		gen_expr_cmp(node, fp, treg);
+		break;
 	default:;
 	}
 }
