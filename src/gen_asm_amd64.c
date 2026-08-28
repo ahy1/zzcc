@@ -199,6 +199,46 @@ static void gen_expr_cmp(struct node_s *node, FILE *fp, int treg)
 	regs[rreg].taken = 0;
 }
 
+static void gen_expr_eq(struct node_s *node, FILE *fp, int treg)
+{
+	int lreg, rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	lreg = get_free_reg();
+	regs[lreg].taken = 1;
+	gen_expr_node(node->subnodes[0], fp, lreg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\txor %%%s, %%%s\n", regs[treg].name32, regs[treg].name32);
+	fprintf(fp, "\tcmp %%%s, %%%s\n", regs[rreg].name32, regs[lreg].name32);
+
+	fprintf(fp, "\tsete %%%s\n", regs[treg].name8);
+}
+
+static void gen_expr_neq(struct node_s *node, FILE *fp, int treg)
+{
+	int lreg, rreg;
+
+	if (node->nsubnodes!=2) return;
+
+	lreg = get_free_reg();
+	regs[lreg].taken = 1;
+	gen_expr_node(node->subnodes[0], fp, lreg);
+
+	rreg = get_free_reg();
+	regs[rreg].taken = 1;
+	gen_expr_node(node->subnodes[1], fp, rreg);
+
+	fprintf(fp, "\txor %%%s, %%%s\n", regs[treg].name32, regs[treg].name32);
+	fprintf(fp, "\tcmp %%%s, %%%s\n", regs[rreg].name32, regs[lreg].name32);
+
+	fprintf(fp, "\tsetne %%%s\n", regs[treg].name8);
+}
+
 static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 {
 	int intval;
@@ -237,6 +277,12 @@ static void gen_expr_node(struct node_s *node, FILE *fp, int treg)
 	case LTE_EXPRESSION:
 	case GTE_EXPRESSION:
 		gen_expr_cmp(node, fp, treg);
+		break;
+	case EQUAL_EXPRESSION:
+		gen_expr_eq(node, fp, treg);
+		break;
+	case NOT_EQUAL_EXPRESSION:
+		gen_expr_neq(node, fp, treg);
 		break;
 	default:;
 	}

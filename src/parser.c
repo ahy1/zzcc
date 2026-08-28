@@ -99,6 +99,7 @@ static int get_index_of(int what, size_t num_alts, int *alts)
 	return -1;
 }
 
+#if 0
 static size_t separated_any_token(struct node_s *parent, struct token_s **tokens, int nt,
 	size_t (*pf)(struct node_s *, struct token_s **),
 	size_t num_separators, int *tt_separators,
@@ -124,6 +125,7 @@ static size_t separated_any_token(struct node_s *parent, struct token_s **tokens
 
 	return add_node(node), ix;
 }
+#endif
 
 static size_t left_assoc(struct node_s *parent, struct token_s **tokens,
 	size_t (*pf)(struct node_s *, struct token_s **),
@@ -349,8 +351,14 @@ static size_t relational_expression(struct node_s *parent, struct token_s **toke
 
 static size_t equality_expression(struct node_s *parent, struct token_s **tokens)
 {
-	return separated_any_token(parent, tokens, EQUALITY_EXPRESSION,
-		relational_expression, 2, (int []) {TT_EQUAL_OP, TT_NOT_EQUAL_OP}, 1);
+	return left_assoc(
+		parent,
+		tokens,
+		relational_expression,
+		2,
+		(int []) {TT_EQUAL_OP, TT_NOT_EQUAL_OP},
+		(int []) {EQUAL_EXPRESSION, NOT_EQUAL_EXPRESSION},
+		1);
 }
 
 static size_t and_expression(struct node_s *parent, struct token_s **tokens)
