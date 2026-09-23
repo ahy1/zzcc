@@ -1,6 +1,4 @@
-TOOL_DIR := c:\p\src\llvm-project\build\bin
-
-CC=${TOOL_DIR}/clang.exe
+CC=clang
 LD=${CC}
 
 BUILD_DIR := build
